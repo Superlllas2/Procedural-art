@@ -1,91 +1,88 @@
+using System.Collections.Generic;
 using Demo;
 using UnityEngine;
 
 namespace GeneralScripts
 {
+    /// <summary>
+    /// Spawns procedural buildings inside the rooms produced by <see cref="CityRoadGenerator"/>.
+    /// Buildings are aligned to the closest street edge and use grammar based prefabs
+    /// to vary their appearance.
+    /// </summary>
     public class CyberCityBlockGenerator : MonoBehaviour
     {
-        [Header("City Settings")]
-        public int width = 6;
-        public int depth = 6;
-        public float spacing = 10f;
-
         [Header("Prefabs")]
         public GameObject[] buildingPrefabs;
-        public GameObject specialBuildingPrefab;
-        public GameObject roadPrefab;
 
-        [Header("Building Height Settings")]
-        public int edgeMinHeight = 1;
-        public int edgeMaxHeight = 4;
-        public int centerMinHeight = 8;
-        public int centerMaxHeight = 20;
-        
-        [Header("References")]
-
-        [Header("Timing")]
+        [Header("Generation Settings")]
+        public float spacing = 8f;
+        public float sidewalkWidth = 2f;
         public float buildDelaySeconds = 0.1f;
-        public float buildingOffsetFromRoad = 4f;
+        public int minHeight = 1;
+        public int maxHeight = 5;
 
-
-        public void ClearScene()
+        public void ClearBlocks()
         {
             for (int i = transform.childCount - 1; i >= 0; i--)
                 DestroyImmediate(transform.GetChild(i).gameObject);
         }
 
-        public void GenerateRoads()
+        public void GenerateBlocks()
         {
-            if (roadPrefab == null)
-            {
-                Debug.LogWarning("Road prefab not assigned.");
+            ClearBlocks();
+
+            var roadGen = CityRoadGenerator.Instance;
+            if (roadGen == null)
                 return;
-            }
 
-            for (int x = 0; x <= width; x++)
+            foreach (Room room in roadGen.Rooms)
             {
-                Vector3 pos = new Vector3(x * spacing, 0, (depth * spacing) / 2);
-                Instantiate(roadPrefab, pos, Quaternion.identity, transform);
-            }
-
-            for (int z = 0; z <= depth; z++)
-            {
-                Vector3 pos = new Vector3((width * spacing) / 2, 0, z * spacing);
-                Instantiate(roadPrefab, pos, Quaternion.Euler(0, 90, 0), transform);
+                RectInt inner = new RectInt(room.Bounds.xMin + 1, room.Bounds.yMin + 1,
+                    room.Bounds.width - 2, room.Bounds.height - 2);
+                GenerateForRoom(inner);
             }
         }
 
-        public void GenerateTown()
+        void GenerateForRoom(RectInt bounds)
         {
-            // foreach (Transform road in roadManager.allRoads)
-            // {
-            //     Vector3 pos = road.position;
-            //     Vector3 forward = road.forward;
-            //     Vector3 right = road.right;
-            //
-            //     // left side
-            //     Vector3 leftPos = pos - right * buildingOffsetFromRoad;
-            //     PlaceBuilding(leftPos, Quaternion.LookRotation(-forward));
-            //
-            //     // right side
-            //     Vector3 rightPos = pos + right * buildingOffsetFromRoad;
-            //     PlaceBuilding(rightPos, Quaternion.LookRotation(forward));
-            // }
+            for (float x = bounds.xMin + sidewalkWidth; x <= bounds.xMax - sidewalkWidth; x += spacing)
+            {
+                for (float z = bounds.yMin + sidewalkWidth; z <= bounds.yMax - sidewalkWidth; z += spacing)
+                {
+                    Vector3 pos = new Vector3(x, 0f, z);
+                    Quaternion rotation = CalculateRotation(bounds, pos);
+                    PlaceBuilding(pos, rotation);
+                }
+            }
         }
-        
+
+        Quaternion CalculateRotation(RectInt bounds, Vector3 pos)
+        {
+            float left = pos.x - bounds.xMin;
+            float right = bounds.xMax - pos.x;
+            float bottom = pos.z - bounds.yMin;
+            float top = bounds.yMax - pos.z;
+            float min = Mathf.Min(Mathf.Min(left, right), Mathf.Min(top, bottom));
+
+            if (Mathf.Approximately(min, left)) return Quaternion.Euler(0f, 90f, 0f);
+            if (Mathf.Approximately(min, right)) return Quaternion.Euler(0f, -90f, 0f);
+            if (Mathf.Approximately(min, top)) return Quaternion.Euler(0f, 180f, 0f);
+            return Quaternion.identity;
+        }
+
         void PlaceBuilding(Vector3 position, Quaternion rotation)
         {
-            if (buildingPrefabs == null || buildingPrefabs.Length == 0) return;
+            if (buildingPrefabs == null || buildingPrefabs.Length == 0)
+                return;
 
             GameObject prefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Length)];
             GameObject building = Instantiate(prefab, position, rotation, transform);
 
-            // height logic — optional
             var simple = building.GetComponent<SimpleBuilding>();
             if (simple != null)
             {
-                simple.minHeight = edgeMinHeight;
-                simple.maxHeight = centerMaxHeight;
+                simple.minHeight = minHeight;
+                simple.maxHeight = maxHeight;
             }
 
             var shape = building.GetComponent<Shape>();

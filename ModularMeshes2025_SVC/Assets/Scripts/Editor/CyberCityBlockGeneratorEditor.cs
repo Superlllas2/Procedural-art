@@ -15,19 +15,14 @@ public class CyberCityBlockGeneratorEditor : UnityEditor.Editor
         GUILayout.Space(10);
         EditorGUILayout.LabelField("Generation Tools", EditorStyles.boldLabel);
 
-        if (GUILayout.Button("Clear Scene"))
+        if (GUILayout.Button("Clear Blocks"))
         {
-            generator.ClearScene();
+            generator.ClearBlocks();
         }
 
-        if (GUILayout.Button("Generate Roads"))
+        if (GUILayout.Button("Generate Blocks"))
         {
-            generator.GenerateRoads();
-        }
-
-        if (GUILayout.Button("Generate Town"))
-        {
-            generator.GenerateTown();
+            generator.GenerateBlocks();
         }
     }
 }

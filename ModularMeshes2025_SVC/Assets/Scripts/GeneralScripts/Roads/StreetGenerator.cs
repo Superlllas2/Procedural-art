@@ -21,12 +21,15 @@ public class CityRoadGenerator : MonoBehaviour
     public float roadThickness = 8f;
     public int overlap = 1;
 
+
     private BSPNode rootNode;
     private List<Room> allBlocks = new();
     private List<Vector2Int> crosswalks = new();
 
     private Transform roadParent;
     private Transform crosswalkParent;
+
+    public IReadOnlyList<Room> Rooms => allBlocks;
 
     public static CityRoadGenerator Instance { get; private set; }
     
@@ -40,7 +43,6 @@ public class CityRoadGenerator : MonoBehaviour
     {
         roadParent = new GameObject("Roads").transform;
         crosswalkParent = new GameObject("Crosswalks").transform;
-
         rootNode = new BSPNode { Bounds = initialBounds };
         Split(rootNode, maxDepth);
         CreateBlocks(rootNode);
@@ -174,6 +176,7 @@ public class CityRoadGenerator : MonoBehaviour
             CreateCrosswalk(crosswalk);
         }
     }
+
 
     void CreatePerimeterRoads(RectInt bounds)
     {
