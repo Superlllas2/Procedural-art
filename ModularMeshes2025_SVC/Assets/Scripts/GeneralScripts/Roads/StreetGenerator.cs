@@ -28,6 +28,14 @@ public class CityRoadGenerator : MonoBehaviour
     private Transform roadParent;
     private Transform crosswalkParent;
 
+    public static CityRoadGenerator Instance { get; private set; }
+    
+    private void Awake()
+    {
+        if (Instance && Instance != this) Destroy(gameObject);
+        else Instance = this;
+    }
+    
     public void Start()
     {
         roadParent = new GameObject("Roads").transform;
