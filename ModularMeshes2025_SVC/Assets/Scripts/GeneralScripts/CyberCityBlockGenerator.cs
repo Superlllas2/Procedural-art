@@ -1,105 +1,97 @@
+using Demo;
 using UnityEngine;
 
-namespace Demo
+namespace GeneralScripts
 {
-    // Generates a cyberpunk-inspired city block using modular prefabs.
-    // Buildings near the center are taller and shrink in height towards the edges.
-    // One landmark building can be spawned in the center.
     public class CyberCityBlockGenerator : MonoBehaviour
     {
-        [Tooltip("Number of blocks along the X axis")]
+        [Header("City Settings")]
         public int width = 6;
-        [Tooltip("Number of blocks along the Z axis")]
         public int depth = 6;
-        [Tooltip("Spacing between each building")]
         public float spacing = 10f;
-        [Tooltip("Available building prefabs")]
-        public GameObject[] buildingPrefabs;
 
-        [Tooltip("Optional landmark building prefab for the city center")]
+        [Header("Prefabs")]
+        public GameObject[] buildingPrefabs;
         public GameObject specialBuildingPrefab;
+        public GameObject roadPrefab;
 
         [Header("Building Height Settings")]
         public int edgeMinHeight = 1;
         public int edgeMaxHeight = 4;
         public int centerMinHeight = 8;
         public int centerMaxHeight = 20;
+        
+        [Header("References")]
 
+        [Header("Timing")]
         public float buildDelaySeconds = 0.1f;
+        public float buildingOffsetFromRoad = 4f;
 
-        void Start()
-        {
-            Generate();
-        }
 
-        void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.G))
-            {
-                Clear();
-                Generate();
-            }
-        }
-
-        void Clear()
+        public void ClearScene()
         {
             for (int i = transform.childCount - 1; i >= 0; i--)
+                DestroyImmediate(transform.GetChild(i).gameObject);
+        }
+
+        public void GenerateRoads()
+        {
+            if (roadPrefab == null)
             {
-                Destroy(transform.GetChild(i).gameObject);
+                Debug.LogWarning("Road prefab not assigned.");
+                return;
+            }
+
+            for (int x = 0; x <= width; x++)
+            {
+                Vector3 pos = new Vector3(x * spacing, 0, (depth * spacing) / 2);
+                Instantiate(roadPrefab, pos, Quaternion.identity, transform);
+            }
+
+            for (int z = 0; z <= depth; z++)
+            {
+                Vector3 pos = new Vector3((width * spacing) / 2, 0, z * spacing);
+                Instantiate(roadPrefab, pos, Quaternion.Euler(0, 90, 0), transform);
             }
         }
 
-        void Generate()
+        public void GenerateTown()
         {
-            if (buildingPrefabs == null || buildingPrefabs.Length == 0)
-                return;
+            // foreach (Transform road in roadManager.allRoads)
+            // {
+            //     Vector3 pos = road.position;
+            //     Vector3 forward = road.forward;
+            //     Vector3 right = road.right;
+            //
+            //     // left side
+            //     Vector3 leftPos = pos - right * buildingOffsetFromRoad;
+            //     PlaceBuilding(leftPos, Quaternion.LookRotation(-forward));
+            //
+            //     // right side
+            //     Vector3 rightPos = pos + right * buildingOffsetFromRoad;
+            //     PlaceBuilding(rightPos, Quaternion.LookRotation(forward));
+            // }
+        }
+        
+        void PlaceBuilding(Vector3 position, Quaternion rotation)
+        {
+            if (buildingPrefabs == null || buildingPrefabs.Length == 0) return;
 
-            Vector2 center = new Vector2((width - 1) * 0.5f, (depth - 1) * 0.5f);
-            float maxDistance = Vector2.Distance(Vector2.zero, center);
+            GameObject prefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Length)];
+            GameObject building = Instantiate(prefab, position, rotation, transform);
 
-            int landmarkX = width / 2;
-            int landmarkZ = depth / 2;
-
-            for (int x = 0; x < width; x++)
+            // height logic — optional
+            var simple = building.GetComponent<SimpleBuilding>();
+            if (simple != null)
             {
-                for (int z = 0; z < depth; z++)
-                {
-                    bool isLandmark = x == landmarkX && z == landmarkZ && specialBuildingPrefab != null;
+                simple.minHeight = edgeMinHeight;
+                simple.maxHeight = centerMaxHeight;
+            }
 
-                    GameObject prefab = isLandmark ? specialBuildingPrefab : buildingPrefabs[Random.Range(0, buildingPrefabs.Length)];
-                    GameObject building = Instantiate(prefab, transform);
-
-                    float posX = x * spacing + Random.Range(-spacing * 0.4f, spacing * 0.4f);
-                    float posZ = z * spacing + Random.Range(-spacing * 0.4f, spacing * 0.4f);
-
-                    building.transform.localPosition = new Vector3(posX, 0f, posZ);
-                    building.transform.Rotate(0f, Random.Range(0f, 360f), 0f);
-
-                    float dist = Vector2.Distance(new Vector2(x, z), center);
-                    float t = 1f - dist / maxDistance;
-
-                    int minH = Mathf.RoundToInt(Mathf.Lerp(edgeMinHeight, centerMinHeight, t));
-                    int maxH = Mathf.RoundToInt(Mathf.Lerp(edgeMaxHeight, centerMaxHeight, t));
-
-                    if (isLandmark)
-                    {
-                        minH = centerMaxHeight;
-                        maxH = centerMaxHeight + 10;
-                    }
-
-                    SimpleBuilding simple = building.GetComponent<SimpleBuilding>();
-                    if (simple != null)
-                    {
-                        simple.minHeight = minH;
-                        simple.maxHeight = maxH;
-                    }
-
-                    Shape shape = building.GetComponent<Shape>();
-                    if (shape != null)
-                    {
-                        shape.Generate(buildDelaySeconds);
-                    }
-                }
+            var shape = building.GetComponent<Shape>();
+            if (shape != null)
+            {
+                shape.Generate(buildDelaySeconds);
             }
         }
     }

@@ -334,8 +334,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1087066582}
   - component: {fileID: 1087066581}
+  - component: {fileID: 1087066583}
+  - component: {fileID: 1087066584}
   m_Layer: 0
-  m_Name: GridCitySpawner
+  m_Name: CityManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -348,7 +350,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1087066580}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d4a3bb68da96a0b46b33ef8e99bb0ccb, type: 3}
   m_Name: 
@@ -370,12 +372,67 @@ Transform:
   m_GameObject: {fileID: 1087066580}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -30, y: 0, z: -30}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1087066583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1087066580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62d75dc7b1b34c5fb82f304b60b40239, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  width: 6
+  depth: 6
+  spacing: 10
+  buildingPrefabs:
+  - {fileID: 3604920485432597347, guid: fee6c2ac503a81e4cb074a72365b79d0, type: 3}
+  - {fileID: 8345122083041106082, guid: fd916cd3aaf80ac4db38da93574822e1, type: 3}
+  specialBuildingPrefab: {fileID: 0}
+  roadPrefab: {fileID: 0}
+  edgeMinHeight: 1
+  edgeMaxHeight: 4
+  centerMinHeight: 8
+  centerMaxHeight: 20
+  buildDelaySeconds: 0.1
+  buildingOffsetFromRoad: 4
+--- !u!114 &1087066584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1087066580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b768a75399f94b88ab6e5a4e6a37715, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  initialBounds:
+    x: -30
+    y: -30
+    width: 60
+    height: 60
+  minSplitSize: 8
+  maxDepth: 8
+  roadPrefab: {fileID: 6867294750479442863, guid: 4d2cc9620b6e441c7ac1c5fcf4bec22b,
+    type: 3}
+  roadHorizontalPrefab: {fileID: 6867294750479442863, guid: c321938368e2c4220abe99df9714ec8a,
+    type: 3}
+  roadVerticalPrefab: {fileID: 6867294750479442863, guid: 4d2cc9620b6e441c7ac1c5fcf4bec22b,
+    type: 3}
+  crosswalkPrefab: {fileID: 0}
+  roadHeight: 0.05
+  roadThickness: 1
+  overlap: 1
 --- !u!1 &1337884392
 GameObject:
   m_ObjectHideFlags: 0
@@ -479,7 +536,7 @@ Transform:
   m_GameObject: {fileID: 1337884392}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 20, y: 0, z: 20}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 6, y: 1, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children: []
