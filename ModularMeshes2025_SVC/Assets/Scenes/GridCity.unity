@@ -374,7 +374,7 @@ MonoBehaviour:
   - {fileID: 8345122083041106082, guid: fd916cd3aaf80ac4db38da93574822e1, type: 3}
   spacing: 2
   sidewalkWidth: 3
-  buildDelaySeconds: 0.05
+  buildDelaySeconds: 0.001
   minHeight: 1
   maxHeight: 5
 --- !u!114 &1087066584
