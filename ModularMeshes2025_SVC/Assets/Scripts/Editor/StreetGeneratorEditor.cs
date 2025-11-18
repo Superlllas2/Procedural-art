@@ -16,8 +16,7 @@ public class StreetGeneratorEditor : Editor
 
         if (GUILayout.Button("Generate City Roads"))
         {
-            // restart generation
-            generator.Start();
+            generator.GenerateCityRoads();
         }
 
         if (GUILayout.Button("Clear All"))

@@ -41,6 +41,13 @@ public class CityRoadGenerator : MonoBehaviour
     
     public void Start()
     {
+        GenerateCityRoads();
+    }
+
+    public void GenerateCityRoads()
+    {
+        ClearAll();
+
         roadParent = new GameObject("Roads").transform;
         crosswalkParent = new GameObject("Crosswalks").transform;
         rootNode = new BSPNode { Bounds = initialBounds };
@@ -251,6 +258,7 @@ public class CityRoadGenerator : MonoBehaviour
         roadParent = null;
         crosswalkParent = null;
 
+        rootNode = null;
         allBlocks.Clear();
         crosswalks.Clear();
     }
