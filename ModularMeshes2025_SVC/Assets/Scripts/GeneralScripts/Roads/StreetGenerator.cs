@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -28,6 +29,8 @@ public class CityRoadGenerator : MonoBehaviour
 
     private Transform roadParent;
     private Transform crosswalkParent;
+
+    private readonly HashSet<RoadSegmentKey> createdRoadSegments = new();
 
     public IReadOnlyList<Room> Rooms => allBlocks;
 
@@ -192,8 +195,11 @@ public class CityRoadGenerator : MonoBehaviour
 
     void CreateRoadSegment(RectInt segment)
     {
+        if (!TryRegisterSegment(segment))
+            return;
+
         Vector3 position = new Vector3(segment.center.x, roadHeight / 2f, segment.center.y);
-        
+
         float lengthX = segment.width;
         float lengthZ = segment.height;
 
@@ -215,6 +221,12 @@ public class CityRoadGenerator : MonoBehaviour
 
         var road = Instantiate(prefabToUse, position, Quaternion.identity, roadParent);
         road.transform.localScale = scale;
+    }
+
+    bool TryRegisterSegment(RectInt segment)
+    {
+        var key = new RoadSegmentKey(segment);
+        return createdRoadSegments.Add(key);
     }
 
     void CreateCrosswalk(Vector2Int pos)
@@ -253,5 +265,45 @@ public class CityRoadGenerator : MonoBehaviour
 
         allBlocks.Clear();
         crosswalks.Clear();
+        createdRoadSegments.Clear();
+    }
+
+    readonly struct RoadSegmentKey : IEquatable<RoadSegmentKey>
+    {
+        readonly int xMin;
+        readonly int yMin;
+        readonly int xMax;
+        readonly int yMax;
+
+        public RoadSegmentKey(RectInt rect)
+        {
+            xMin = rect.xMin;
+            yMin = rect.yMin;
+            xMax = rect.xMax;
+            yMax = rect.yMax;
+        }
+
+        public bool Equals(RoadSegmentKey other)
+        {
+            return xMin == other.xMin && yMin == other.yMin && xMax == other.xMax && yMax == other.yMax;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is RoadSegmentKey other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + xMin;
+                hash = hash * 31 + yMin;
+                hash = hash * 31 + xMax;
+                hash = hash * 31 + yMax;
+                return hash;
+            }
+        }
     }
 }
