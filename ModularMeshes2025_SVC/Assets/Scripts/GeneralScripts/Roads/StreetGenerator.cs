@@ -30,7 +30,7 @@ public class CityRoadGenerator : MonoBehaviour
     private Transform roadParent;
     private Transform crosswalkParent;
 
-    private readonly HashSet<RoadSegmentKey> createdRoadSegments = new();
+    private readonly List<RectInt> collectedRoadSegments = new();
 
     public IReadOnlyList<Room> Rooms => allBlocks;
 
@@ -176,10 +176,14 @@ public class CityRoadGenerator : MonoBehaviour
 
     void CreateRoadsForBlocks()
     {
+        collectedRoadSegments.Clear();
+
         foreach (var block in allBlocks)
         {
             CreatePerimeterRoads(block.Bounds);
         }
+
+        InstantiateMergedRoadSegments();
 
         foreach (var crosswalk in crosswalks)
         {
@@ -191,20 +195,25 @@ public class CityRoadGenerator : MonoBehaviour
     void CreatePerimeterRoads(RectInt bounds)
     {
         // Top
-        CreateRoadSegment(new RectInt(bounds.xMin, bounds.yMax - 1, bounds.width, 1));
+        QueueRoadSegment(new RectInt(bounds.xMin, bounds.yMax - 1, bounds.width, 1));
         // Bottom
-        CreateRoadSegment(new RectInt(bounds.xMin, bounds.yMin, bounds.width, 1));
+        QueueRoadSegment(new RectInt(bounds.xMin, bounds.yMin, bounds.width, 1));
         // Left
-        CreateRoadSegment(new RectInt(bounds.xMin, bounds.yMin, 1, bounds.height));
+        QueueRoadSegment(new RectInt(bounds.xMin, bounds.yMin, 1, bounds.height));
         // Right
-        CreateRoadSegment(new RectInt(bounds.xMax - 1, bounds.yMin, 1, bounds.height));
+        QueueRoadSegment(new RectInt(bounds.xMax - 1, bounds.yMin, 1, bounds.height));
+    }
+
+    void QueueRoadSegment(RectInt segment)
+    {
+        if (segment.width <= 0 || segment.height <= 0)
+            return;
+
+        collectedRoadSegments.Add(segment);
     }
 
     void CreateRoadSegment(RectInt segment)
     {
-        if (!TryRegisterSegment(segment))
-            return;
-
         Vector3 position = new Vector3(segment.center.x, roadHeight / 2f, segment.center.y);
 
         float lengthX = segment.width;
@@ -230,10 +239,92 @@ public class CityRoadGenerator : MonoBehaviour
         road.transform.localScale = scale;
     }
 
-    bool TryRegisterSegment(RectInt segment)
+    void InstantiateMergedRoadSegments()
     {
-        var key = new RoadSegmentKey(segment);
-        return createdRoadSegments.Add(key);
+        if (collectedRoadSegments.Count == 0)
+            return;
+
+        var horizontal = new Dictionary<int, List<IntRange>>();
+        var vertical = new Dictionary<int, List<IntRange>>();
+
+        foreach (var segment in collectedRoadSegments)
+        {
+            if (segment.height == 1 && segment.width >= 1)
+            {
+                AddInterval(horizontal, segment.yMin, segment.xMin, segment.xMax);
+            }
+            else if (segment.width == 1 && segment.height >= 1)
+            {
+                AddInterval(vertical, segment.xMin, segment.yMin, segment.yMax);
+            }
+            else
+            {
+                CreateRoadSegment(segment);
+            }
+        }
+
+        InstantiateFromIntervals(horizontal, true);
+        InstantiateFromIntervals(vertical, false);
+
+        collectedRoadSegments.Clear();
+    }
+
+    void InstantiateFromIntervals(Dictionary<int, List<IntRange>> source, bool horizontal)
+    {
+        foreach (var kvp in source)
+        {
+            var ranges = kvp.Value;
+            if (ranges.Count == 0)
+                continue;
+
+            ranges.Sort((a, b) => a.Start.CompareTo(b.Start));
+
+            int currentStart = ranges[0].Start;
+            int currentEnd = ranges[0].End;
+
+            for (int i = 1; i < ranges.Count; i++)
+            {
+                var range = ranges[i];
+                if (range.Start <= currentEnd)
+                {
+                    currentEnd = Mathf.Max(currentEnd, range.End);
+                }
+                else
+                {
+                    InstantiateInterval(kvp.Key, currentStart, currentEnd, horizontal);
+                    currentStart = range.Start;
+                    currentEnd = range.End;
+                }
+            }
+
+            InstantiateInterval(kvp.Key, currentStart, currentEnd, horizontal);
+        }
+    }
+
+    void InstantiateInterval(int constantCoordinate, int start, int end, bool horizontal)
+    {
+        if (end <= start)
+            return;
+
+        RectInt rect = horizontal
+            ? new RectInt(start, constantCoordinate, end - start, 1)
+            : new RectInt(constantCoordinate, start, 1, end - start);
+
+        CreateRoadSegment(rect);
+    }
+
+    void AddInterval(Dictionary<int, List<IntRange>> storage, int key, int start, int end)
+    {
+        if (end <= start)
+            return;
+
+        if (!storage.TryGetValue(key, out var list))
+        {
+            list = new List<IntRange>();
+            storage[key] = list;
+        }
+
+        list.Add(new IntRange(start, end));
     }
 
     void CreateCrosswalk(Vector2Int pos)
@@ -250,15 +341,17 @@ public class CityRoadGenerator : MonoBehaviour
         int thickness = 1;
 
         // left
-        CreateRoadSegment(new RectInt(bounds.xMin - thickness, bounds.yMin, thickness, bounds.height));
+        QueueRoadSegment(new RectInt(bounds.xMin - thickness, bounds.yMin, thickness, bounds.height));
         // right
-        CreateRoadSegment(new RectInt(bounds.xMax, bounds.yMin, thickness, bounds.height));
+        QueueRoadSegment(new RectInt(bounds.xMax, bounds.yMin, thickness, bounds.height));
         // bottom
-        CreateRoadSegment(new RectInt(bounds.xMin - thickness, bounds.yMin - thickness, bounds.width + 2 * thickness, thickness));
+        QueueRoadSegment(new RectInt(bounds.xMin - thickness, bounds.yMin - thickness, bounds.width + 2 * thickness, thickness));
         // top
-        CreateRoadSegment(new RectInt(bounds.xMin - thickness, bounds.yMax, bounds.width + 2 * thickness, thickness));
+        QueueRoadSegment(new RectInt(bounds.xMin - thickness, bounds.yMax, bounds.width + 2 * thickness, thickness));
+
+        InstantiateMergedRoadSegments();
     }
-    
+
     public void ClearAll()
     {
         if (roadParent != null)
@@ -273,45 +366,18 @@ public class CityRoadGenerator : MonoBehaviour
         rootNode = null;
         allBlocks.Clear();
         crosswalks.Clear();
-        createdRoadSegments.Clear();
+        collectedRoadSegments.Clear();
     }
 
-    readonly struct RoadSegmentKey : IEquatable<RoadSegmentKey>
+    readonly struct IntRange
     {
-        readonly int xMin;
-        readonly int yMin;
-        readonly int xMax;
-        readonly int yMax;
+        public readonly int Start;
+        public readonly int End;
 
-        public RoadSegmentKey(RectInt rect)
+        public IntRange(int start, int end)
         {
-            xMin = rect.xMin;
-            yMin = rect.yMin;
-            xMax = rect.xMax;
-            yMax = rect.yMax;
-        }
-
-        public bool Equals(RoadSegmentKey other)
-        {
-            return xMin == other.xMin && yMin == other.yMin && xMax == other.xMax && yMax == other.yMax;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is RoadSegmentKey other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                int hash = 17;
-                hash = hash * 31 + xMin;
-                hash = hash * 31 + yMin;
-                hash = hash * 31 + xMax;
-                hash = hash * 31 + yMax;
-                return hash;
-            }
+            Start = start;
+            End = end;
         }
     }
 }
