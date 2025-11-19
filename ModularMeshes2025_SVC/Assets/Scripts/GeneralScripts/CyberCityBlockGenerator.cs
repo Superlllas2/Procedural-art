@@ -21,15 +21,36 @@ namespace GeneralScripts
         public int minHeight = 1;
         public int maxHeight = 5;
 
+        Transform buildingsParent;
+
+        Transform GetOrCreateBuildingsParent()
+        {
+            if (buildingsParent == null)
+            {
+                Transform existing = transform.Find("Buildings");
+                if (existing != null) buildingsParent = existing;
+                else
+                {
+                    GameObject parentGo = new GameObject("Buildings");
+                    buildingsParent = parentGo.transform;
+                    buildingsParent.SetParent(transform, false);
+                }
+            }
+
+            return buildingsParent;
+        }
+
         public void ClearBlocks()
         {
-            for (int i = transform.childCount - 1; i >= 0; i--)
-                DestroyImmediate(transform.GetChild(i).gameObject);
+            Transform parent = GetOrCreateBuildingsParent();
+            for (int i = parent.childCount - 1; i >= 0; i--)
+                DestroyImmediate(parent.GetChild(i).gameObject);
         }
 
         public void GenerateBlocks()
         {
             ClearBlocks();
+            Transform parent = GetOrCreateBuildingsParent();
 
             var roadGen = CityRoadGenerator.Instance;
             if (roadGen == null)
@@ -41,11 +62,11 @@ namespace GeneralScripts
             {
                 RectInt inner = new RectInt(room.Bounds.xMin + 1, room.Bounds.yMin + 1,
                     room.Bounds.width - 2, room.Bounds.height - 2);
-                GenerateForRoom(inner, cellSize);
+                GenerateForRoom(inner, cellSize, parent);
             }
         }
 
-        void GenerateForRoom(RectInt bounds, float cellSize)
+        void GenerateForRoom(RectInt bounds, float cellSize, Transform parent)
         {
             Rect worldBounds = new Rect(
                 bounds.xMin * cellSize,
@@ -65,7 +86,7 @@ namespace GeneralScripts
                 {
                     Vector3 pos = new Vector3(x, 0f, z);
                     Quaternion rotation = CalculateRotation(worldBounds, pos);
-                    PlaceBuilding(pos, rotation);
+                    PlaceBuilding(pos, rotation, parent);
                 }
             }
         }
@@ -84,13 +105,13 @@ namespace GeneralScripts
             return Quaternion.identity;
         }
 
-        void PlaceBuilding(Vector3 position, Quaternion rotation)
+        void PlaceBuilding(Vector3 position, Quaternion rotation, Transform parent)
         {
             if (buildingPrefabs == null || buildingPrefabs.Length == 0)
                 return;
 
             GameObject prefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Length)];
-            GameObject building = Instantiate(prefab, position, rotation, transform);
+            GameObject building = Instantiate(prefab, position, rotation, parent);
 
             var simple = building.GetComponent<SimpleBuilding>();
             if (simple != null)
