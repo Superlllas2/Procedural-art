@@ -35,28 +35,42 @@ namespace GeneralScripts
             if (roadGen == null)
                 return;
 
+            float cellSize = Mathf.Max(roadGen.CellSize, 0.001f);
+
             foreach (Room room in roadGen.Rooms)
             {
                 RectInt inner = new RectInt(room.Bounds.xMin + 1, room.Bounds.yMin + 1,
                     room.Bounds.width - 2, room.Bounds.height - 2);
-                GenerateForRoom(inner);
+                GenerateForRoom(inner, cellSize);
             }
         }
 
-        void GenerateForRoom(RectInt bounds)
+        void GenerateForRoom(RectInt bounds, float cellSize)
         {
-            for (float x = bounds.xMin + sidewalkWidth; x <= bounds.xMax - sidewalkWidth; x += spacing)
+            Rect worldBounds = new Rect(
+                bounds.xMin * cellSize,
+                bounds.yMin * cellSize,
+                bounds.width * cellSize,
+                bounds.height * cellSize);
+
+            float worldSidewalk = Mathf.Max(0f, sidewalkWidth);
+            float worldSpacing = Mathf.Max(spacing, 0.001f);
+
+            if (worldBounds.width <= worldSidewalk * 2f || worldBounds.height <= worldSidewalk * 2f)
+                return;
+
+            for (float x = worldBounds.xMin + worldSidewalk; x <= worldBounds.xMax - worldSidewalk; x += worldSpacing)
             {
-                for (float z = bounds.yMin + sidewalkWidth; z <= bounds.yMax - sidewalkWidth; z += spacing)
+                for (float z = worldBounds.yMin + worldSidewalk; z <= worldBounds.yMax - worldSidewalk; z += worldSpacing)
                 {
                     Vector3 pos = new Vector3(x, 0f, z);
-                    Quaternion rotation = CalculateRotation(bounds, pos);
+                    Quaternion rotation = CalculateRotation(worldBounds, pos);
                     PlaceBuilding(pos, rotation);
                 }
             }
         }
 
-        Quaternion CalculateRotation(RectInt bounds, Vector3 pos)
+        Quaternion CalculateRotation(Rect bounds, Vector3 pos)
         {
             float left = pos.x - bounds.xMin;
             float right = bounds.xMax - pos.x;

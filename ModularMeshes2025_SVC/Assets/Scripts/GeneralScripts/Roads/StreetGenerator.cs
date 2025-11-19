@@ -35,6 +35,8 @@ public class CityRoadGenerator : MonoBehaviour
 
     public IReadOnlyList<Room> Rooms => allBlocks;
 
+    public float CellSize => roadThickness;
+
     public static CityRoadGenerator Instance { get; private set; }
     
     private void Awake()
@@ -53,7 +55,9 @@ public class CityRoadGenerator : MonoBehaviour
         ClearAll();
 
         roadParent = new GameObject("Roads").transform;
+        roadParent.SetParent(transform, false);
         crosswalkParent = new GameObject("Crosswalks").transform;
+        crosswalkParent.SetParent(transform, false);
         rootNode = new BSPNode { Bounds = initialBounds };
         Split(rootNode, maxDepth);
         CreateBlocks(rootNode);
