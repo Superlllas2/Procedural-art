@@ -75,7 +75,11 @@ namespace GeneralScripts
                 bounds.height * cellSize);
 
             float worldSidewalk = Mathf.Max(0f, sidewalkWidth);
-            float worldSpacing = Mathf.Max(spacing, 0.001f);
+
+            // Treat non-positive spacing values as "fill one building per cell" so users can safely
+            // dial the inspector down to zero without creating an infinite placement loop.
+            float worldSpacing = spacing > 0f ? spacing : cellSize;
+            worldSpacing = Mathf.Max(worldSpacing, 0.01f);
 
             if (worldBounds.width <= worldSidewalk * 2f || worldBounds.height <= worldSidewalk * 2f)
                 return;
