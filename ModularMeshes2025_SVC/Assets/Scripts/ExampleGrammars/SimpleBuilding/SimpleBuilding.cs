@@ -13,7 +13,7 @@ namespace Demo {
                 public GameObject[] roofPrefabs; // Your roof prefabs (may have different height)
 
                 [SerializeField]
-                bool combineMeshes = true;
+                public bool combineMeshes = true;
 
                 bool meshesCombined = false;
 
@@ -91,6 +91,11 @@ namespace Demo {
                                 rootCollider.sharedMesh=null;
                         }
 
+                        MeshRenderer[] childRenderers = GetComponentsInChildren<MeshRenderer>();
+                        foreach (MeshRenderer childRenderer in childRenderers) {
+                                childRenderer.enabled=true;
+                        }
+
                         meshesCombined=false;
                 }
 
@@ -103,7 +108,8 @@ namespace Demo {
                                 return;
 
                         List<CombineInstance> combineInstances = new List<CombineInstance>();
-                        Material sharedMaterial = null;
+                        List<MeshRenderer> childRenderers = new List<MeshRenderer>();
+                        Material[] sharedMaterials = null;
                         Transform rootTransform = transform;
 
                         foreach (MeshFilter filter in meshFilters) {
@@ -122,11 +128,11 @@ namespace Demo {
                                 };
                                 combineInstances.Add(instance);
 
-                                if (sharedMaterial==null && childRenderer.sharedMaterial!=null) {
-                                        sharedMaterial = childRenderer.sharedMaterial;
+                                if (sharedMaterials==null && childRenderer.sharedMaterials!=null && childRenderer.sharedMaterials.Length>0) {
+                                        sharedMaterials = childRenderer.sharedMaterials;
                                 }
 
-                                childRenderer.enabled=false;
+                                childRenderers.Add(childRenderer);
                         }
 
                         if (combineInstances.Count==0)
@@ -144,8 +150,8 @@ namespace Demo {
                         combinedMesh.CombineMeshes(combineInstances.ToArray(), true, true);
                         rootFilter.sharedMesh = combinedMesh;
 
-                        if (sharedMaterial!=null) {
-                                rootRenderer.sharedMaterial = sharedMaterial;
+                        if (sharedMaterials!=null) {
+                                rootRenderer.sharedMaterials = sharedMaterials;
                         }
 
                         MeshCollider rootCollider = GetComponent<MeshCollider>();
@@ -153,6 +159,10 @@ namespace Demo {
                                 rootCollider = gameObject.AddComponent<MeshCollider>();
                         rootCollider.sharedMesh = null;
                         rootCollider.sharedMesh = combinedMesh;
+
+                        foreach (MeshRenderer childRenderer in childRenderers) {
+                                childRenderer.enabled=false;
+                        }
 
                         meshesCombined=true;
                 }
