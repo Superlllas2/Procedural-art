@@ -118,6 +118,14 @@ namespace Demo {
                                 if (filter.sharedMesh==null)
                                         continue;
 
+                                // Unity throws if we try to combine a mesh that is not
+                                // marked as readable. Skip those meshes so the combine
+                                // pass can still succeed for the remaining pieces.
+                                if (!filter.sharedMesh.isReadable) {
+                                        Debug.LogWarning($"[SimpleBuilding] Skipping non-readable mesh '{filter.sharedMesh.name}' on '{filter.name}'. Enable Read/Write to include it in the combined mesh.");
+                                        continue;
+                                }
+
                                 MeshRenderer childRenderer = filter.GetComponent<MeshRenderer>();
                                 if (childRenderer==null)
                                         continue;
