@@ -80,11 +80,23 @@ namespace GeneralScripts
             if (worldBounds.width <= worldSidewalk * 2f || worldBounds.height <= worldSidewalk * 2f)
                 return;
 
-            for (float x = worldBounds.xMin + worldSidewalk; x <= worldBounds.xMax - worldSidewalk; x += worldSpacing)
+            float usableWidth = worldBounds.width - (worldSidewalk * 2f);
+            float usableHeight = worldBounds.height - (worldSidewalk * 2f);
+
+            int stepsX = Mathf.Max(1, Mathf.FloorToInt(usableWidth / worldSpacing) + 1);
+            int stepsZ = Mathf.Max(1, Mathf.FloorToInt(usableHeight / worldSpacing) + 1);
+
+            float leftoverX = Mathf.Max(0f, usableWidth - ((stepsX - 1) * worldSpacing));
+            float leftoverZ = Mathf.Max(0f, usableHeight - ((stepsZ - 1) * worldSpacing));
+
+            float startX = worldBounds.xMin + worldSidewalk + (leftoverX * 0.5f);
+            float startZ = worldBounds.yMin + worldSidewalk + (leftoverZ * 0.5f);
+
+            for (int ix = 0; ix < stepsX; ix++)
             {
-                for (float z = worldBounds.yMin + worldSidewalk; z <= worldBounds.yMax - worldSidewalk; z += worldSpacing)
+                for (int iz = 0; iz < stepsZ; iz++)
                 {
-                    Vector3 pos = new Vector3(x, 0f, z);
+                    Vector3 pos = new Vector3(startX + (ix * worldSpacing), 0f, startZ + (iz * worldSpacing));
                     Quaternion rotation = CalculateRotation(worldBounds, pos);
                     PlaceBuilding(pos, rotation, parent);
                 }

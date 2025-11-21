@@ -11,11 +11,26 @@ public class CityBlockGenerator : MonoBehaviour
 
     public void Generate()
     {
-        for (float x = bounds.xMin + sidewalkWidth; x <= bounds.xMax - sidewalkWidth; x += spacing)
+        float usableWidth = bounds.width - (sidewalkWidth * 2f);
+        float usableHeight = bounds.height - (sidewalkWidth * 2f);
+
+        if (usableWidth <= 0f || usableHeight <= 0f)
+            return;
+
+        int stepsX = Mathf.Max(1, Mathf.FloorToInt(usableWidth / spacing) + 1);
+        int stepsZ = Mathf.Max(1, Mathf.FloorToInt(usableHeight / spacing) + 1);
+
+        float leftoverX = Mathf.Max(0f, usableWidth - ((stepsX - 1) * spacing));
+        float leftoverZ = Mathf.Max(0f, usableHeight - ((stepsZ - 1) * spacing));
+
+        float startX = bounds.xMin + sidewalkWidth + (leftoverX * 0.5f);
+        float startZ = bounds.yMin + sidewalkWidth + (leftoverZ * 0.5f);
+
+        for (int ix = 0; ix < stepsX; ix++)
         {
-            for (float z = bounds.yMin + sidewalkWidth; z <= bounds.yMax - sidewalkWidth; z += spacing)
+            for (int iz = 0; iz < stepsZ; iz++)
             {
-                Vector3 position = new Vector3(x, 0f, z);
+                Vector3 position = new Vector3(startX + (ix * spacing), 0f, startZ + (iz * spacing));
                 PlaceBuilding(position);
             }
         }
