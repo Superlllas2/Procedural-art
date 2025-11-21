@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Demo;
 using UnityEngine;
@@ -20,6 +21,8 @@ namespace GeneralScripts
         public float buildDelaySeconds = 0.1f;
         public int minHeight = 1;
         public int maxHeight = 5;
+        [Tooltip("Deterministically generates the same layout when non-zero.")]
+        public int seed = 0;
 
         Transform buildingsParent;
 
@@ -57,16 +60,17 @@ namespace GeneralScripts
                 return;
 
             float cellSize = Mathf.Max(roadGen.CellSize, 0.001f);
+            System.Random random = seed != 0 ? new System.Random(seed) : new System.Random(Environment.TickCount);
 
             foreach (Room room in roadGen.Rooms)
             {
                 RectInt inner = new RectInt(room.Bounds.xMin + 1, room.Bounds.yMin + 1,
                     room.Bounds.width - 2, room.Bounds.height - 2);
-                GenerateForRoom(inner, cellSize, parent);
+                GenerateForRoom(inner, cellSize, parent, random);
             }
         }
 
-        void GenerateForRoom(RectInt bounds, float cellSize, Transform parent)
+        void GenerateForRoom(RectInt bounds, float cellSize, Transform parent, System.Random random)
         {
             Rect worldBounds = new Rect(
                 bounds.xMin * cellSize,
@@ -86,7 +90,7 @@ namespace GeneralScripts
                 {
                     Vector3 pos = new Vector3(x, 0f, z);
                     Quaternion rotation = CalculateRotation(worldBounds, pos);
-                    PlaceBuilding(pos, rotation, parent);
+                    PlaceBuilding(pos, rotation, parent, random);
                 }
             }
         }
@@ -105,13 +109,20 @@ namespace GeneralScripts
             return Quaternion.identity;
         }
 
-        void PlaceBuilding(Vector3 position, Quaternion rotation, Transform parent)
+        void PlaceBuilding(Vector3 position, Quaternion rotation, Transform parent, System.Random random)
         {
             if (buildingPrefabs == null || buildingPrefabs.Length == 0)
                 return;
 
-            GameObject prefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Length)];
+            GameObject prefab = buildingPrefabs[random.Next(buildingPrefabs.Length)];
             GameObject building = Instantiate(prefab, position, rotation, parent);
+
+            var buildingRandom = building.GetComponent<RandomGenerator>();
+            if (buildingRandom != null)
+            {
+                buildingRandom.seed = random.Next(int.MaxValue);
+                buildingRandom.ResetRandom();
+            }
 
             var simple = building.GetComponent<SimpleBuilding>();
             if (simple != null)
