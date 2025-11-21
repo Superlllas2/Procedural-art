@@ -373,10 +373,11 @@ MonoBehaviour:
   - {fileID: 3604920485432597347, guid: fee6c2ac503a81e4cb074a72365b79d0, type: 3}
   - {fileID: 8345122083041106082, guid: fd916cd3aaf80ac4db38da93574822e1, type: 3}
   spacing: 2
-  sidewalkWidth: 3
+  sidewalkWidth: 2
   buildDelaySeconds: 0.001
   minHeight: 1
   maxHeight: 5
+  seed: 1
 --- !u!114 &1087066584
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -467,6 +468,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -488,6 +491,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
