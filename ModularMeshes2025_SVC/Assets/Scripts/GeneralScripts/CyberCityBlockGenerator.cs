@@ -74,8 +74,8 @@ namespace GeneralScripts
                 bounds.width * cellSize,
                 bounds.height * cellSize);
 
-            float worldSidewalk = Mathf.Max(0f, sidewalkWidth);
             float worldSpacing = Mathf.Max(spacing, 0.001f);
+            float worldSidewalk = Mathf.Max(worldSpacing * 0.5f, sidewalkWidth);
 
             if (worldBounds.width <= worldSidewalk * 2f || worldBounds.height <= worldSidewalk * 2f)
                 return;

@@ -11,8 +11,10 @@ public class CityBlockGenerator : MonoBehaviour
 
     public void Generate()
     {
-        float usableWidth = bounds.width - (sidewalkWidth * 2f);
-        float usableHeight = bounds.height - (sidewalkWidth * 2f);
+        float effectiveSidewalk = Mathf.Max(sidewalkWidth, spacing * 0.5f);
+
+        float usableWidth = bounds.width - (effectiveSidewalk * 2f);
+        float usableHeight = bounds.height - (effectiveSidewalk * 2f);
 
         if (usableWidth <= 0f || usableHeight <= 0f)
             return;
@@ -23,8 +25,8 @@ public class CityBlockGenerator : MonoBehaviour
         float leftoverX = Mathf.Max(0f, usableWidth - ((stepsX - 1) * spacing));
         float leftoverZ = Mathf.Max(0f, usableHeight - ((stepsZ - 1) * spacing));
 
-        float startX = bounds.xMin + sidewalkWidth + (leftoverX * 0.5f);
-        float startZ = bounds.yMin + sidewalkWidth + (leftoverZ * 0.5f);
+        float startX = bounds.xMin + effectiveSidewalk + (leftoverX * 0.5f);
+        float startZ = bounds.yMin + effectiveSidewalk + (leftoverZ * 0.5f);
 
         for (int ix = 0; ix < stepsX; ix++)
         {
