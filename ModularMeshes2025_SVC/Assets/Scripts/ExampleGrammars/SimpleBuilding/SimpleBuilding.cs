@@ -27,10 +27,14 @@ namespace Demo {
 			return choices[index];
 		}
 
-		protected override void Execute() {
-			if (buildingHeight<0) { // This is only done once for the root symbol
-				buildingHeight = Random.Range(minHeight, maxHeight+1);
-			}
+                protected override void Execute() {
+                        int cappedMaxHeight = Mathf.Max(minHeight, maxHeight);
+
+                        if (buildingHeight<0) { // This is only done once for the root symbol
+                                buildingHeight = Random.Range(minHeight, cappedMaxHeight+1);
+                        } else {
+                                buildingHeight = Mathf.Clamp(buildingHeight, minHeight, cappedMaxHeight);
+                        }
 
 			if (stockNumber<buildingHeight) { 
 				// First spawn a new stock...
