@@ -61,6 +61,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     public float gridSize = 2.5f;
     [Tooltip("Vertical distance between floors.")]
     public float floorHeight = 3f;
+    [Tooltip("Uniform scale multiplier applied to the generated building.")]
+    [Min(0.01f)]
+    public float scale = 1f;
 
     [Header("Randomness")]
     [Tooltip("When enabled, uses the provided seed for deterministic balcony/variant selection.")]
@@ -109,6 +112,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         sectionCount = Mathf.Max(1, sectionCount);
         gridSize = Mathf.Max(0.1f, gridSize);
         floorHeight = Mathf.Max(0.1f, floorHeight);
+        scale = Mathf.Max(0.01f, scale);
     }
 
     public void Generate()
@@ -124,6 +128,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         Transform parent = CreateRootParent();
         Transform facadeParent = CreateChild(parent, "Facades");
+
+        parent.localScale = Vector3.one * scale;
 
         BuildLongFacade(facadeParent, true, zFront, foundationHeight, random);
         BuildLongFacade(facadeParent, false, zBack, foundationHeight, random);
@@ -187,7 +193,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             for (int localX = 0; localX < layout.width; localX++)
             {
                 CellType groundCellType = DetermineCellType(layout, localX, 0);
-                Quaternion foundationRot = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
+                Quaternion foundationRot = GetLongFacadeRotation(isFront);
                 TryPlaceFoundation(parent, groundCellType, new Vector3((xOffset + localX) * gridSize, 0f, zPos), foundationRot, random);
 
                 for (int floorIndex = 0; floorIndex < floors; floorIndex++)
@@ -201,13 +207,18 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     if (cellType == CellType.Entrance && !includeFoundationUnderEntrances)
                         bottom.y = floorIndex * floorHeight;
 
-                    Quaternion rot = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
+                    Quaternion rot = GetLongFacadeRotation(isFront);
                     InstantiateAligned(prefab, bottom, ApplyRotation(rot), parent);
                 }
             }
 
             xOffset += layout.width;
         }
+    }
+
+    Quaternion GetLongFacadeRotation(bool isFront)
+    {
+        return isFront ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
     }
 
     void BuildShortFacade(Transform parent, bool isLeft, float zFront, float zBack, float foundationHeight, System.Random random)
