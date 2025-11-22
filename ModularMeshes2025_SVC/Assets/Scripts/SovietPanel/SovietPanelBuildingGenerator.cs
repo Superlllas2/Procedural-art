@@ -61,6 +61,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     public float gridSize = 2.5f;
     [Tooltip("Vertical distance between floors.")]
     public float floorHeight = 3f;
+    [Tooltip("Uniform scale multiplier applied to the generated building.")]
+    [Min(0.01f)]
+    public float scale = 1f;
 
     [Header("Randomness")]
     [Tooltip("When enabled, uses the provided seed for deterministic balcony/variant selection.")]
@@ -68,6 +71,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     public int seed = 12345;
 
     [Header("Prefabs")]
+    [Tooltip("Basement modules placed at ground level to lift the building.")]
+    public PrefabFamily foundationPrefabs;
     public PrefabFamily entrancePrefabs;
     public PrefabFamily wallPrefabs;
     public PrefabFamily windowPrefabs;
@@ -75,9 +80,16 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     public PrefabFamily balconyPrefabs;
     public RoofPrefabs roofPrefabs;
 
+    [Header("Placement Tweaks")]
+    [Tooltip("Applies an extra yaw to every module to align models that are authored facing -X.")]
+    public float moduleRotationOffset = 90f;
+    [Tooltip("When disabled, the entrance column is left without a foundation so the doorway reaches the ground.")]
+    public bool includeFoundationUnderEntrances = false;
+
     const int shortFacadeDepth = 3;
 
     readonly List<SectionLayout> sectionLayouts = new List<SectionLayout>();
+    readonly Dictionary<GameObject, float> bottomOffsetCache = new Dictionary<GameObject, float>();
 
     class SectionLayout
     {
@@ -99,6 +111,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         sectionCount = Mathf.Max(1, sectionCount);
         gridSize = Mathf.Max(0.1f, gridSize);
         floorHeight = Mathf.Max(0.1f, floorHeight);
+        scale = Mathf.Max(0.01f, scale);
     }
 
     public void Generate()
@@ -113,6 +126,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         Transform parent = CreateRootParent();
         Transform facadeParent = CreateChild(parent, "Facades");
+
+        parent.localScale = Vector3.one * scale;
 
         BuildLongFacade(facadeParent, true, zFront, random);
         BuildLongFacade(facadeParent, false, zBack, random);
@@ -175,6 +190,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         {
             for (int localX = 0; localX < layout.width; localX++)
             {
+                CellType groundCellType = DetermineCellType(layout, localX, 0);
+                Quaternion foundationRot = GetLongFacadeRotation(isFront);
+                bool placedFoundation = TryPlaceFoundation(parent, groundCellType, new Vector3((xOffset + localX) * gridSize, 0f, zPos), foundationRot, random);
+
                 for (int floorIndex = 0; floorIndex < floors; floorIndex++)
                 {
                     CellType cellType = DetermineCellType(layout, localX, floorIndex);
@@ -182,14 +201,23 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     if (prefab == null)
                         continue;
 
-                    Vector3 pos = new Vector3((xOffset + localX) * gridSize, floorIndex * floorHeight, zPos);
-                    Quaternion rot = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
-                    Instantiate(prefab, pos, rot, parent);
+                    if (floorIndex == 0 && placedFoundation && cellType != CellType.Entrance)
+                        continue;
+
+                    Vector3 bottom = new Vector3((xOffset + localX) * gridSize, floorIndex * floorHeight, zPos);
+
+                    Quaternion rot = GetLongFacadeRotation(isFront);
+                    InstantiateAligned(prefab, bottom, ApplyRotation(rot), parent);
                 }
             }
 
             xOffset += layout.width;
         }
+    }
+
+    Quaternion GetLongFacadeRotation(bool isFront)
+    {
+        return isFront ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
     }
 
     void BuildShortFacade(Transform parent, bool isLeft, float zFront, float zBack, System.Random random)
@@ -209,8 +237,17 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 if (prefab == null)
                     continue;
 
-                Vector3 pos = new Vector3(xPos, floorIndex * floorHeight, zPos);
-                Instantiate(prefab, pos, rotation, parent);
+                bool placedFoundation = false;
+                if (floorIndex == 0)
+                {
+                    CellType groundCellType = cellType;
+                    placedFoundation = TryPlaceFoundation(parent, groundCellType, new Vector3(xPos, 0f, zPos), rotation, random);
+                    if (placedFoundation)
+                        continue;
+                }
+
+                Vector3 bottom = new Vector3(xPos, floorIndex * floorHeight, zPos);
+                InstantiateAligned(prefab, bottom, ApplyRotation(rotation), parent);
             }
         }
     }
@@ -241,8 +278,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 if (prefabToUse == null)
                     continue;
 
-                Vector3 pos = new Vector3(xIndex * gridSize, roofY, zPos);
-                Instantiate(prefabToUse, pos, inwardRotation, roofParent);
+                Vector3 bottom = new Vector3(xIndex * gridSize, roofY, zPos);
+                InstantiateAligned(prefabToUse, bottom, ApplyRotation(inwardRotation), roofParent);
             }
         }
 
@@ -256,8 +293,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 Vector3 leftPos = new Vector3(0f, roofY, zPos);
                 Vector3 rightPos = new Vector3(maxX, roofY, zPos);
 
-                Instantiate(roofPrefabs.parapet, leftPos, leftRot, roofParent);
-                Instantiate(roofPrefabs.parapet, rightPos, rightRot, roofParent);
+                InstantiateAligned(roofPrefabs.parapet, leftPos, ApplyRotation(leftRot), roofParent);
+                InstantiateAligned(roofPrefabs.parapet, rightPos, ApplyRotation(rightRot), roofParent);
             }
         }
     }
@@ -325,11 +362,64 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         return closest;
     }
 
+    Quaternion ApplyRotation(Quaternion baseRotation)
+    {
+        return Quaternion.Euler(0f, moduleRotationOffset, 0f) * baseRotation;
+    }
+
+    bool TryPlaceFoundation(Transform parent, CellType groundCellType, Vector3 bottom, Quaternion rotation, System.Random random)
+    {
+        GameObject prefab = foundationPrefabs?.Choose(random) ?? foundationPrefabs?.FirstOrDefault();
+        if (prefab == null)
+            return false;
+
+        if (!includeFoundationUnderEntrances && groundCellType == CellType.Entrance)
+            return false;
+
+        InstantiateAligned(prefab, bottom, ApplyRotation(rotation), parent);
+        return true;
+    }
+
+    void InstantiateAligned(GameObject prefab, Vector3 desiredBottom, Quaternion rotation, Transform parent)
+    {
+        float offsetY = GetBottomOffset(prefab);
+        Vector3 position = desiredBottom + new Vector3(0f, offsetY, 0f);
+        Instantiate(prefab, position, rotation, parent);
+    }
+
+    float GetBottomOffset(GameObject prefab)
+    {
+        if (prefab == null)
+            return 0f;
+
+        if (bottomOffsetCache.TryGetValue(prefab, out float cached))
+            return cached;
+
+        Bounds bounds = CalculateBounds(prefab);
+        float offset = bounds.size == Vector3.zero ? 0f : -bounds.min.y;
+        bottomOffsetCache[prefab] = offset;
+        return offset;
+    }
+
+    Bounds CalculateBounds(GameObject prefab)
+    {
+        Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>();
+        if (renderers == null || renderers.Length == 0)
+            return new Bounds(Vector3.zero, Vector3.zero);
+
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+            bounds.Encapsulate(renderers[i].bounds);
+
+        return bounds;
+    }
+
 #if UNITY_EDITOR
     [ContextMenu("Apply Sample Prefab Mapping")]
     void ApplySampleMapping()
     {
         string basePath = "Assets/SovietHousing/";
+        foundationPrefabs = LoadFamily(basePath + "panel_fund1.fbx", basePath + "panel_fund2.fbx");
         entrancePrefabs = LoadFamily(basePath + "panel_doorway.fbx");
         wallPrefabs = LoadFamily(basePath + "panel_wall1.fbx", basePath + "panel_wall2.fbx", basePath + "panel_wall3.fbx");
         windowPrefabs = LoadFamily(basePath + "panel_wall5.fbx", basePath + "panel_wall6.fbx");
