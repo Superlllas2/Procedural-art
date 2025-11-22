@@ -44,16 +44,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 843a212d9aa2349cf801e94148600196, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SovietPanelBuildingGenerator
-  floors: 5
-  sectionCount: 3
+  floors: 3
+  sectionCount: 1
   sectionWidths: 050000000300000005000000
   gridSize: 2.5
-  floorHeight: 3
+  floorHeight: 2
   useSeed: 0
   seed: 12345
   entrancePrefabs:
     prefabs:
-    - {fileID: 978463479055069654, guid: 43648622a502b447a98e67153166045c, type: 3}
+    - {fileID: 2475730649387203853, guid: 380b4cdea8afd4b969f45e9594d1b253, type: 3}
   wallPrefabs:
     prefabs:
     - {fileID: 8319390295253662587, guid: d9e973471810c4b41943685115155da1, type: 3}
