@@ -87,10 +87,21 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
     public void ClearExisting()
     {
+        string rootName = "GeneratedPanel";
+        bool cleared = false;
+        // Ensure we remove any previously generated building before creating a new one.
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
-            DestroyImmediate(transform.GetChild(i).gameObject);
+            Transform child = transform.GetChild(i);
+            if (child.name == rootName)
+            {
+                DestroyImmediate(child.gameObject);
+                cleared = true;
+            }
         }
+
+        if (cleared)
+            Debug.Log($"{rootName} cleared before regeneration.");
     }
 
     void OnValidate()
@@ -120,6 +131,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         BuildShortFacade(facadeParent, false, zFront, zBack, random);
 
         BuildRoof(parent, zFront, zBack, roofY, random);
+
+        Debug.Log($"Generated new panel building with {sectionLayouts.Count} sections and {floors} floors.");
     }
 
     Transform CreateRootParent()
@@ -127,7 +140,12 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         string rootName = "GeneratedPanel";
         Transform existing = transform.Find(rootName);
         if (existing != null)
+        {
+            // Reuse the single root container so everything stays under one GeneratedPanel object.
+            for (int i = existing.childCount - 1; i >= 0; i--)
+                DestroyImmediate(existing.GetChild(i).gameObject);
             return existing;
+        }
 
         GameObject go = new GameObject(rootName);
         go.transform.SetParent(transform, false);
@@ -183,8 +201,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                         continue;
 
                     Vector3 pos = new Vector3((xOffset + localX) * gridSize, floorIndex * floorHeight, zPos);
-                    Quaternion rot = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
-                    Instantiate(prefab, pos, rot, parent);
+                    Quaternion baseRotation = prefab.transform.rotation;
+                    Quaternion facadeRotation = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
+                    // Keep prefab orientation and only add yaw so panels stay flat along the façade.
+                    Instantiate(prefab, pos, baseRotation * facadeRotation, parent);
                 }
             }
 
@@ -196,7 +216,6 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     {
         float totalWidth = TotalWidth();
         float xPos = isLeft ? 0f : (totalWidth - 1) * gridSize;
-        Quaternion rotation = isLeft ? Quaternion.Euler(0f, -90f, 0f) : Quaternion.Euler(0f, 90f, 0f);
 
         for (int floorIndex = 0; floorIndex < floors; floorIndex++)
         {
@@ -210,7 +229,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     continue;
 
                 Vector3 pos = new Vector3(xPos, floorIndex * floorHeight, zPos);
-                Instantiate(prefab, pos, rotation, parent);
+                Quaternion baseRotation = prefab.transform.rotation;
+                Quaternion facadeRotation = isLeft ? Quaternion.Euler(0f, -90f, 0f) : Quaternion.Euler(0f, 90f, 0f);
+                // Use prefab's rotation and only yaw to face the correct short side.
+                Instantiate(prefab, pos, baseRotation * facadeRotation, parent);
             }
         }
     }
@@ -242,7 +264,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     continue;
 
                 Vector3 pos = new Vector3(xIndex * gridSize, roofY, zPos);
-                Instantiate(prefabToUse, pos, inwardRotation, roofParent);
+                Quaternion baseRotation = prefabToUse.transform.rotation;
+                // Preserve prefab's rotation, then yaw inward for front/back roof ramps and flats.
+                Instantiate(prefabToUse, pos, baseRotation * inwardRotation, roofParent);
             }
         }
 
@@ -256,8 +280,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 Vector3 leftPos = new Vector3(0f, roofY, zPos);
                 Vector3 rightPos = new Vector3(maxX, roofY, zPos);
 
-                Instantiate(roofPrefabs.parapet, leftPos, leftRot, roofParent);
-                Instantiate(roofPrefabs.parapet, rightPos, rightRot, roofParent);
+                Quaternion parapetBase = roofPrefabs.parapet.transform.rotation;
+                // Keep parapet orientation and only apply yaw to face along the short façades.
+                Instantiate(roofPrefabs.parapet, leftPos, parapetBase * leftRot, roofParent);
+                Instantiate(roofPrefabs.parapet, rightPos, parapetBase * rightRot, roofParent);
             }
         }
     }
