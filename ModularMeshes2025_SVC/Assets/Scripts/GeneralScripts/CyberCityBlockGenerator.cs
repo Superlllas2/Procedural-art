@@ -148,6 +148,14 @@ namespace GeneralScripts
             {
                 shape.Generate(buildDelaySeconds);
             }
+
+            var soviet = building.GetComponent<SovietPanelBuildingGenerator>();
+            if (soviet != null)
+            {
+                soviet.useSeed = true;
+                soviet.seed = random.Next(int.MaxValue);
+                soviet.Generate();
+            }
         }
     }
 }
