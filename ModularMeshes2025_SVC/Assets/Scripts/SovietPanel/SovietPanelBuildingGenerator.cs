@@ -90,7 +90,6 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
     readonly List<SectionLayout> sectionLayouts = new List<SectionLayout>();
     readonly Dictionary<GameObject, float> bottomOffsetCache = new Dictionary<GameObject, float>();
-    readonly Dictionary<GameObject, float> heightCache = new Dictionary<GameObject, float>();
 
     class SectionLayout
     {
@@ -123,18 +122,17 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         float zFront = 0f;
         float zBack = (shortFacadeDepth - 1) * gridSize;
-        float foundationHeight = GetFoundationHeight();
-        float roofY = foundationHeight + floors * floorHeight;
+        float roofY = floors * floorHeight;
 
         Transform parent = CreateRootParent();
         Transform facadeParent = CreateChild(parent, "Facades");
 
         parent.localScale = Vector3.one * scale;
 
-        BuildLongFacade(facadeParent, true, zFront, foundationHeight, random);
-        BuildLongFacade(facadeParent, false, zBack, foundationHeight, random);
-        BuildShortFacade(facadeParent, true, zFront, zBack, foundationHeight, random);
-        BuildShortFacade(facadeParent, false, zFront, zBack, foundationHeight, random);
+        BuildLongFacade(facadeParent, true, zFront, random);
+        BuildLongFacade(facadeParent, false, zBack, random);
+        BuildShortFacade(facadeParent, true, zFront, zBack, random);
+        BuildShortFacade(facadeParent, false, zFront, zBack, random);
 
         BuildRoof(parent, zFront, zBack, roofY, random);
     }
@@ -185,7 +183,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         }
     }
 
-    void BuildLongFacade(Transform parent, bool isFront, float zPos, float foundationHeight, System.Random random)
+    void BuildLongFacade(Transform parent, bool isFront, float zPos, System.Random random)
     {
         float xOffset = 0f;
         foreach (SectionLayout layout in sectionLayouts)
@@ -194,7 +192,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             {
                 CellType groundCellType = DetermineCellType(layout, localX, 0);
                 Quaternion foundationRot = GetLongFacadeRotation(isFront);
-                TryPlaceFoundation(parent, groundCellType, new Vector3((xOffset + localX) * gridSize, 0f, zPos), foundationRot, random);
+                bool placedFoundation = TryPlaceFoundation(parent, groundCellType, new Vector3((xOffset + localX) * gridSize, 0f, zPos), foundationRot, random);
 
                 for (int floorIndex = 0; floorIndex < floors; floorIndex++)
                 {
@@ -203,9 +201,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     if (prefab == null)
                         continue;
 
-                    Vector3 bottom = new Vector3((xOffset + localX) * gridSize, foundationHeight + (floorIndex * floorHeight), zPos);
-                    if (cellType == CellType.Entrance && !includeFoundationUnderEntrances)
-                        bottom.y = floorIndex * floorHeight;
+                    if (floorIndex == 0 && placedFoundation && cellType != CellType.Entrance)
+                        continue;
+
+                    Vector3 bottom = new Vector3((xOffset + localX) * gridSize, floorIndex * floorHeight, zPos);
 
                     Quaternion rot = GetLongFacadeRotation(isFront);
                     InstantiateAligned(prefab, bottom, ApplyRotation(rot), parent);
@@ -221,7 +220,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         return isFront ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
     }
 
-    void BuildShortFacade(Transform parent, bool isLeft, float zFront, float zBack, float foundationHeight, System.Random random)
+    void BuildShortFacade(Transform parent, bool isLeft, float zFront, float zBack, System.Random random)
     {
         float totalWidth = TotalWidth();
         float xPos = isLeft ? 0f : (totalWidth - 1) * gridSize;
@@ -238,13 +237,16 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 if (prefab == null)
                     continue;
 
+                bool placedFoundation = false;
                 if (floorIndex == 0)
                 {
                     CellType groundCellType = cellType;
-                    TryPlaceFoundation(parent, groundCellType, new Vector3(xPos, 0f, zPos), rotation, random);
+                    placedFoundation = TryPlaceFoundation(parent, groundCellType, new Vector3(xPos, 0f, zPos), rotation, random);
+                    if (placedFoundation)
+                        continue;
                 }
 
-                Vector3 bottom = new Vector3(xPos, foundationHeight + (floorIndex * floorHeight), zPos);
+                Vector3 bottom = new Vector3(xPos, floorIndex * floorHeight, zPos);
                 InstantiateAligned(prefab, bottom, ApplyRotation(rotation), parent);
             }
         }
@@ -365,16 +367,17 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         return Quaternion.Euler(0f, moduleRotationOffset, 0f) * baseRotation;
     }
 
-    void TryPlaceFoundation(Transform parent, CellType groundCellType, Vector3 bottom, Quaternion rotation, System.Random random)
+    bool TryPlaceFoundation(Transform parent, CellType groundCellType, Vector3 bottom, Quaternion rotation, System.Random random)
     {
         GameObject prefab = foundationPrefabs?.Choose(random) ?? foundationPrefabs?.FirstOrDefault();
         if (prefab == null)
-            return;
+            return false;
 
         if (!includeFoundationUnderEntrances && groundCellType == CellType.Entrance)
-            return;
+            return false;
 
         InstantiateAligned(prefab, bottom, ApplyRotation(rotation), parent);
+        return true;
     }
 
     void InstantiateAligned(GameObject prefab, Vector3 desiredBottom, Quaternion rotation, Transform parent)
@@ -396,21 +399,6 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         float offset = bounds.size == Vector3.zero ? 0f : -bounds.min.y;
         bottomOffsetCache[prefab] = offset;
         return offset;
-    }
-
-    float GetFoundationHeight()
-    {
-        GameObject foundationPrefab = foundationPrefabs?.FirstOrDefault();
-        if (foundationPrefab == null)
-            return 0f;
-
-        if (heightCache.TryGetValue(foundationPrefab, out float cached))
-            return cached;
-
-        Bounds bounds = CalculateBounds(foundationPrefab);
-        float height = bounds.size.y;
-        heightCache[foundationPrefab] = height;
-        return height;
     }
 
     Bounds CalculateBounds(GameObject prefab)
