@@ -25,22 +25,24 @@ namespace Demo {
 
 		protected override void Execute() {
 			// Create four walls:
-			for (int i = 0; i<4; i++) {
-				Vector3 localPosition = new Vector3();
-				switch (i) {
-					case 0:
-						localPosition = new Vector3(-(Width-1)*0.5f, 0, 0); // left
-						break;
-					case 1:
-						localPosition = new Vector3(0, 0, (Depth-1)*0.5f); // back
-						break;
-					case 2:
-						localPosition = new Vector3((Width-1)*0.5f, 0, 0); // right
-						break;
-					case 3:
-						localPosition = new Vector3(0, 0, -(Depth-1)*0.5f); // front
-						break;
-				}
+                        for (int i = 0; i<4; i++) {
+                                // Offset each wall inwards by half a unit so the center pivot of the wall pieces
+                                // sits on the edge of the footprint instead of hanging over the sides.
+                                Vector3 localPosition = new Vector3();
+                                switch (i) {
+                                        case 0:
+                                                localPosition = new Vector3(-(Width-1)*0.5f + 0.5f, 0, 0); // left
+                                                break;
+                                        case 1:
+                                                localPosition = new Vector3(0, 0, (Depth-1)*0.5f - 0.5f); // back
+                                                break;
+                                        case 2:
+                                                localPosition = new Vector3((Width-1)*0.5f - 0.5f, 0, 0); // right
+                                                break;
+                                        case 3:
+                                                localPosition = new Vector3(0, 0, -(Depth-1)*0.5f + 0.5f); // front
+                                                break;
+                                }
 				SimpleRow newRow = CreateSymbol<SimpleRow>("wall", localPosition, Quaternion.Euler(0, i*90, 0));
 				newRow.Initialize(i%2==1 ? Width : Depth,wallStyle);
 				newRow.Generate();
