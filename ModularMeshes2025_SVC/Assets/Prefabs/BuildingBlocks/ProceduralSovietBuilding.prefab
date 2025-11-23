@@ -47,13 +47,18 @@ MonoBehaviour:
   floors: 5
   sectionCount: 3
   sectionWidths: 050000000300000005000000
-  gridSize: 2.5
-  floorHeight: 3
+  gridSize: 2
+  floorHeight: 2
+  scale: 1
   useSeed: 0
   seed: 12345
+  foundationPrefabs:
+    prefabs:
+    - {fileID: 7709086767882348601, guid: a1af9384d03554c6ea67d62105896b2f, type: 3}
+    - {fileID: 3210216682315827461, guid: 0843c23dbc7c34888b3cfb03009608b4, type: 3}
   entrancePrefabs:
     prefabs:
-    - {fileID: 978463479055069654, guid: 43648622a502b447a98e67153166045c, type: 3}
+    - {fileID: 8586944525969559062, guid: 5c6860972bc114298b5ca7bb4f6d2fea, type: 3}
   wallPrefabs:
     prefabs:
     - {fileID: 8319390295253662587, guid: d9e973471810c4b41943685115155da1, type: 3}
@@ -65,14 +70,16 @@ MonoBehaviour:
     - {fileID: 6723253471634003754, guid: 151ed2fc7bfd14bbd8e6cd086bdf48d5, type: 3}
   stairwellPrefabs:
     prefabs:
-    - {fileID: 2886164066820857089, guid: 8986fa3a69a184250adbec67e9625b1c, type: 3}
+    - {fileID: 5820851871358004045, guid: 0f037c2751145499fb1d263ee537bf0a, type: 3}
   balconyPrefabs:
     prefabs:
-    - {fileID: 3362739218634353962, guid: 1ba298417c2b34319a98cb09705ccc6b, type: 3}
-    - {fileID: 264305762230650591, guid: a67cc2fc0ead548f8a964adc1d41da42, type: 3}
+    - {fileID: 8121465616193773174, guid: f8c878ec006774e75894b546c54c9faa, type: 3}
+    - {fileID: 8121465616193773174, guid: f8c878ec006774e75894b546c54c9faa, type: 3}
   roofPrefabs:
     flat: {fileID: 8405020661028029076, guid: 717362a9f6f334feaa9d4cf77182f5aa, type: 3}
     rampInward: {fileID: 9207814159047922100, guid: 388c133f52d304c01bfa4b1550f492b8,
       type: 3}
     parapet: {fileID: 2211797859881594179, guid: 5776a569f204540efa80eb800d06d907,
       type: 3}
+  moduleRotationOffset: 90
+  includeFoundationUnderEntrances: 0
