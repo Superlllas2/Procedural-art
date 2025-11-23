@@ -193,7 +193,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             {
                 CellType groundCellType = DetermineCellType(layout, localX, 0);
                 Quaternion foundationRot = GetLongFacadeRotation(isFront);
-                bool placedFoundation = TryPlaceFoundation(parent, groundCellType, new Vector3((xOffset + localX) * gridSize, 0f, zPos), foundationRot, random);
+                Vector3 basePosition = new Vector3((xOffset + localX + 0.5f) * gridSize, 0f, zPos);
+                bool placedFoundation = TryPlaceFoundation(parent, groundCellType, basePosition, foundationRot, random);
 
                 for (int floorIndex = 0; floorIndex < floors; floorIndex++)
                 {
@@ -202,7 +203,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     if (prefab == null)
                         continue;
 
-                    Vector3 bottom = GetCellBottomPosition(prefab, cellType, floorIndex, placedFoundation, new Vector3((xOffset + localX) * gridSize, 0f, zPos));
+                    Vector3 bottom = GetCellBottomPosition(prefab, cellType, floorIndex, placedFoundation, basePosition);
 
                     Quaternion rot = GetLongFacadeRotation(isFront);
                     InstantiateAligned(prefab, bottom, ApplyRotation(rot), parent);
@@ -278,7 +279,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 if (prefabToUse == null)
                     continue;
 
-                Vector3 bottom = new Vector3(xIndex * gridSize, roofY, zPos);
+                Vector3 bottom = new Vector3((xIndex + 0.5f) * gridSize, roofY, zPos);
                 InstantiateAligned(prefabToUse, bottom, ApplyRotation(inwardRotation), roofParent);
             }
         }
