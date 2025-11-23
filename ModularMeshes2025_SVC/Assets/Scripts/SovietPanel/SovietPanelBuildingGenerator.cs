@@ -256,7 +256,6 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             return;
 
         Transform roofParent = CreateChild(parent, "Roof");
-        float totalWidth = TotalWidth();
 
         for (int facade = 0; facade < 2; facade++)
         {
@@ -264,19 +263,22 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             float zPos = isFront ? zFrontLong : zBackLong;
             Quaternion inwardRotation = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
 
-            for (int xIndex = 0; xIndex < totalWidth; xIndex++)
+            float xCursor = 0f;
+            foreach (SectionLayout layout in sectionLayouts)
             {
-                GameObject prefabToUse;
-                if (xIndex == 0 || xIndex == totalWidth - 1)
-                    prefabToUse = roofPrefabs.rampInward;
-                else
-                    prefabToUse = roofPrefabs.flat;
+                for (int localX = 0; localX < layout.width; localX++)
+                {
+                    bool useRamp = localX == 0 || localX == layout.width - 1;
+                    GameObject prefabToUse = useRamp ? roofPrefabs.rampInward : roofPrefabs.flat;
 
-                if (prefabToUse == null)
-                    continue;
+                    if (prefabToUse == null)
+                        continue;
 
-                Vector3 bottom = new Vector3(xIndex * gridSize, roofY, zPos);
-                InstantiateAligned(prefabToUse, bottom, ApplyRotation(inwardRotation), roofParent);
+                    Vector3 bottom = new Vector3((xCursor + localX) * gridSize, roofY, zPos);
+                    InstantiateAligned(prefabToUse, bottom, ApplyRotation(inwardRotation), roofParent);
+                }
+
+                xCursor += layout.width;
             }
         }
 
