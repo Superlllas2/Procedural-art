@@ -121,8 +121,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         System.Random random = useSeed ? new System.Random(seed) : new System.Random();
         BuildLayouts(random);
 
-        float zFront = 0f;
-        float zBack = (shortFacadeDepth - 1f) * gridSize;
+        float zFrontLong = -gridSize * 0.5f;
+        float zBackLong = (shortFacadeDepth - 0.5f) * gridSize;
+        float zFrontShort = 0f;
+        float zBackShort = (shortFacadeDepth - 1f) * gridSize;
         float xLeft = -gridSize * 0.5f;
         float xRight = (TotalWidth() - 0.5f) * gridSize;
         float roofY = floors * floorHeight;
@@ -132,12 +134,12 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         parent.localScale = Vector3.one * scale;
 
-        BuildLongFacade(facadeParent, true, zFront, random);
-        BuildLongFacade(facadeParent, false, zBack, random);
-        BuildShortFacade(facadeParent, true, xLeft, zFront, zBack, random);
-        BuildShortFacade(facadeParent, false, xRight, zFront, zBack, random);
+        BuildLongFacade(facadeParent, true, zFrontLong, random);
+        BuildLongFacade(facadeParent, false, zBackLong, random);
+        BuildShortFacade(facadeParent, true, xLeft, zFrontShort, zBackShort, random);
+        BuildShortFacade(facadeParent, false, xRight, zFrontShort, zBackShort, random);
 
-        BuildRoof(parent, xLeft, xRight, zFront, zBack, roofY, random);
+        BuildRoof(parent, xLeft, xRight, zFrontLong, zBackLong, zFrontShort, zBackShort, roofY, random);
     }
 
     Transform CreateRootParent()
@@ -248,7 +250,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         }
     }
 
-    void BuildRoof(Transform parent, float xLeft, float xRight, float zFront, float zBack, float roofY, System.Random random)
+    void BuildRoof(Transform parent, float xLeft, float xRight, float zFrontLong, float zBackLong, float zFrontShort, float zBackShort, float roofY, System.Random random)
     {
         if (roofPrefabs == null)
             return;
@@ -259,7 +261,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         for (int facade = 0; facade < 2; facade++)
         {
             bool isFront = facade == 0;
-            float zPos = isFront ? zFront : zBack;
+            float zPos = isFront ? zFrontLong : zBackLong;
             Quaternion inwardRotation = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
 
             for (int xIndex = 0; xIndex < totalWidth; xIndex++)
@@ -284,7 +286,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             Quaternion rightRot = Quaternion.Euler(0f, 90f, 0f);
             for (int depthIndex = 0; depthIndex < shortFacadeDepth; depthIndex++)
             {
-                float zPos = Mathf.Lerp(zFront, zBack, depthIndex / (float)(shortFacadeDepth - 1));
+                float zPos = Mathf.Lerp(zFrontShort, zBackShort, depthIndex / (float)(shortFacadeDepth - 1));
                 Vector3 leftPos = new Vector3(xLeft, roofY, zPos);
                 Vector3 rightPos = new Vector3(xRight, roofY, zPos);
 
