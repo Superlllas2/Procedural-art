@@ -309,14 +309,30 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             return defaultRoofY;
 
         float maxY = float.MinValue;
+        Matrix4x4 worldToLocal = rootParent.worldToLocalMatrix;
         foreach (Renderer renderer in renderers)
         {
-            Vector3 localCenter = rootParent.InverseTransformPoint(renderer.bounds.center);
-            float localMaxY = localCenter.y + renderer.bounds.extents.y;
-            maxY = Mathf.Max(maxY, localMaxY);
+            Bounds localBounds = TransformBounds(renderer.bounds, worldToLocal);
+            maxY = Mathf.Max(maxY, localBounds.max.y);
         }
 
         return Mathf.Max(defaultRoofY, maxY);
+    }
+
+    static Bounds TransformBounds(Bounds bounds, Matrix4x4 matrix)
+    {
+        Vector3 center = matrix.MultiplyPoint3x4(bounds.center);
+        Vector3 extents = bounds.extents;
+
+        Vector3 axisX = matrix.MultiplyVector(new Vector3(extents.x, 0f, 0f));
+        Vector3 axisY = matrix.MultiplyVector(new Vector3(0f, extents.y, 0f));
+        Vector3 axisZ = matrix.MultiplyVector(new Vector3(0f, 0f, extents.z));
+
+        extents.x = Mathf.Abs(axisX.x) + Mathf.Abs(axisY.x) + Mathf.Abs(axisZ.x);
+        extents.y = Mathf.Abs(axisX.y) + Mathf.Abs(axisY.y) + Mathf.Abs(axisZ.y);
+        extents.z = Mathf.Abs(axisX.z) + Mathf.Abs(axisY.z) + Mathf.Abs(axisZ.z);
+
+        return new Bounds(center, extents * 2f);
     }
 
     CellType DetermineCellType(SectionLayout layout, int localX, int floorIndex)
