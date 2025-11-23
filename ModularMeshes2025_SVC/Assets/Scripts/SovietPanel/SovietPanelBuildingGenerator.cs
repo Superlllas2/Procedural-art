@@ -83,6 +83,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     [Header("Placement Tweaks")]
     [Tooltip("Applies an extra yaw to every module to align models that are authored facing -X.")]
     public float moduleRotationOffset = 90f;
+    public float roofYoffset = 0f;
     [Tooltip("When disabled, the entrance column is left without a foundation so the doorway reaches the ground.")]
     public bool includeFoundationUnderEntrances = false;
 
@@ -271,9 +272,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                         continue;
 
                     float zPos = zFrontLong + depthIndex * gridSize;
-                    Quaternion rotation = isFrontRow ? Quaternion.identity : isBackRow ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
+                    Quaternion rotation = isBackRow ? Quaternion.identity : isFrontRow ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
 
-                    Vector3 bottom = new Vector3((xCursor + localX) * gridSize, roofY, zPos);
+                    Vector3 bottom = new Vector3((xCursor + localX) * gridSize, roofY + roofYoffset, zPos);
                     InstantiateAligned(prefabToUse, bottom, ApplyRotation(rotation), roofParent);
                 }
             }
@@ -283,7 +284,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         if (roofPrefabs.parapet != null)
         {
-            Quaternion leftRot = Quaternion.Euler(0f, -90f, 0f);
+            Quaternion leftRot = Quaternion.Euler(0f, +90f, 0f);
             Quaternion rightRot = Quaternion.Euler(0f, 90f, 0f);
             for (int depthIndex = 0; depthIndex < shortFacadeDepth; depthIndex++)
             {

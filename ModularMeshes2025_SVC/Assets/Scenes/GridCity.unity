@@ -405,7 +405,7 @@ MonoBehaviour:
   - {fileID: 6327398288295619360, guid: e997f6ed2d0b145e485c20d6b152272e, type: 3}
   spacing: 2
   sidewalkWidth: 2
-  buildDelaySeconds: 0.001
+  buildDelaySeconds: 0.1
   minHeight: 1
   maxHeight: 5
   seed: 1

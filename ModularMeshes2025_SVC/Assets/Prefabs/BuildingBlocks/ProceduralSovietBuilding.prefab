@@ -76,10 +76,11 @@ MonoBehaviour:
     - {fileID: 8121465616193773174, guid: f8c878ec006774e75894b546c54c9faa, type: 3}
     - {fileID: 8121465616193773174, guid: f8c878ec006774e75894b546c54c9faa, type: 3}
   roofPrefabs:
-    flat: {fileID: 5488528152174381260, guid: 4888ff060fd76413f9d6bb458ff96d39, type: 3}
-    rampInward: {fileID: 2040855607338009787, guid: d404f8560b1574c0aba259bb96976b46,
+    flat: {fileID: 8405020661028029076, guid: 717362a9f6f334feaa9d4cf77182f5aa, type: 3}
+    rampInward: {fileID: 9207814159047922100, guid: 388c133f52d304c01bfa4b1550f492b8,
       type: 3}
     parapet: {fileID: 8827890101969432575, guid: 967299f3114694595ae085269ec9012b,
       type: 3}
   moduleRotationOffset: 90
+  roofYoffset: 0.4
   includeFoundationUnderEntrances: 1
