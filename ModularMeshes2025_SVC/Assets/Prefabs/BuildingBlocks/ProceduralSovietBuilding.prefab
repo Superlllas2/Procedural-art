@@ -47,8 +47,8 @@ MonoBehaviour:
   floors: 5
   sectionCount: 3
   sectionWidths: 050000000300000005000000
-  gridSize: 2
-  floorHeight: 2
+  gridSize: 1.98
+  floorHeight: 1.98
   scale: 1
   useSeed: 0
   seed: 12345
@@ -61,13 +61,13 @@ MonoBehaviour:
     - {fileID: 8586944525969559062, guid: 5c6860972bc114298b5ca7bb4f6d2fea, type: 3}
   wallPrefabs:
     prefabs:
-    - {fileID: 8319390295253662587, guid: d9e973471810c4b41943685115155da1, type: 3}
+    - {fileID: 4523898015460440981, guid: 8d9e0c277666d483da4540d195d661d1, type: 3}
   windowPrefabs:
     prefabs:
-    - {fileID: 6578987777316401662, guid: 7dab063e74cb049f7a84bebbf2b05838, type: 3}
-    - {fileID: 4213894490547831632, guid: bc2b97dbff39745f8ade7c30c2c4f43f, type: 3}
-    - {fileID: 8884073500585190117, guid: e0a21ec44454a406084e39435f4b10ad, type: 3}
-    - {fileID: 6723253471634003754, guid: 151ed2fc7bfd14bbd8e6cd086bdf48d5, type: 3}
+    - {fileID: 634858440471927959, guid: 625ee65a472604dba9d198ea210004f3, type: 3}
+    - {fileID: 8317961911771583035, guid: af8228561254447699e5bb768c33c76b, type: 3}
+    - {fileID: 6690787639481816808, guid: 488e3dd927e304b43bda8107bbdfb05e, type: 3}
+    - {fileID: 7795361763072629622, guid: a90af3450ef0b49678742ad48d6f7928, type: 3}
   stairwellPrefabs:
     prefabs:
     - {fileID: 5820851871358004045, guid: 0f037c2751145499fb1d263ee537bf0a, type: 3}
@@ -82,4 +82,4 @@ MonoBehaviour:
     parapet: {fileID: 2211797859881594179, guid: 5776a569f204540efa80eb800d06d907,
       type: 3}
   moduleRotationOffset: 90
-  includeFoundationUnderEntrances: 0
+  includeFoundationUnderEntrances: 1
