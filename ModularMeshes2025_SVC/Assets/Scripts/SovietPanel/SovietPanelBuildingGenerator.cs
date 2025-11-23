@@ -121,8 +121,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         System.Random random = useSeed ? new System.Random(seed) : new System.Random();
         BuildLayouts(random);
 
-        float zFront = -gridSize * 0.5f;
-        float zBack = (shortFacadeDepth - 0.5f) * gridSize;
+        float zFront = 0f;
+        float zBack = (shortFacadeDepth - 1f) * gridSize;
         float xLeft = -gridSize * 0.5f;
         float xRight = (TotalWidth() - 0.5f) * gridSize;
         float roofY = floors * floorHeight;
