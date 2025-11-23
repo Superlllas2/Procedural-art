@@ -91,6 +91,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     readonly List<SectionLayout> sectionLayouts = new List<SectionLayout>();
     readonly Dictionary<GameObject, float> bottomOffsetCache = new Dictionary<GameObject, float>();
     readonly Dictionary<GameObject, float> heightCache = new Dictionary<GameObject, float>();
+#if UNITY_EDITOR
+    int floorIndexDebugSample = -1;
+#endif
 
     class SectionLayout
     {
@@ -129,6 +132,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         Transform facadeParent = CreateChild(parent, "Facades");
 
         parent.localScale = Vector3.one * scale;
+
+#if UNITY_EDITOR
+        floorIndexDebugSample = -1;
+#endif
 
         BuildLongFacade(facadeParent, true, zFront, random);
         BuildLongFacade(facadeParent, false, zBack, random);
@@ -222,10 +229,12 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     void BuildShortFacade(Transform parent, bool isLeft, float zFront, float zBack, System.Random random)
     {
         float totalWidth = TotalWidth();
-        // Panels are authored with their pivot in the center, so we offset the short façades
-        // inward by half a grid cell to keep the walls flush with the long sides instead of
-        // hanging past the building footprint.
-        float xPos = isLeft ? gridSize * 0.5f : (totalWidth - 0.5f) * gridSize;
+        // With centered pivots, the long façades span X = 0 to X = totalWidth * gridSize.
+        // Placing the short façade columns exactly on those edge planes keeps the corner column
+        // shared instead of offset, eliminating the overhang/step.
+        float leftEdgeX = 0f;
+        float rightEdgeX = totalWidth * gridSize;
+        float xPos = isLeft ? leftEdgeX : rightEdgeX;
         Quaternion rotation = isLeft ? Quaternion.Euler(0f, -90f, 0f) : Quaternion.Euler(0f, 90f, 0f);
 
         for (int floorIndex = 0; floorIndex < floors; floorIndex++)
@@ -250,6 +259,16 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 InstantiateAligned(prefab, bottom, ApplyRotation(rotation), parent);
             }
         }
+
+#if UNITY_EDITOR
+        if (floorIndexDebugSample < 0)
+        {
+            // Visualize one corner column to confirm the short wall aligns flush to the long façade plane.
+            Vector3 corner = new Vector3(xPos, 0f, zFront);
+            Debug.DrawLine(corner, corner + Vector3.up * floorHeight, Color.magenta, 5f);
+            floorIndexDebugSample = 0;
+        }
+#endif
     }
 
     void BuildRoof(Transform parent, float zFront, float zBack, float roofY, System.Random random)
@@ -259,8 +278,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         Transform roofParent = CreateChild(parent, "Roof");
         float totalWidth = TotalWidth();
-        float shortLeftX = gridSize * 0.5f;
-        float shortRightX = (totalWidth - 0.5f) * gridSize;
+        // Align short-side roof pieces directly over the wall planes so parapets sit flush at corners.
+        float shortLeftX = 0f;
+        float shortRightX = totalWidth * gridSize;
 
         for (int facade = 0; facade < 2; facade++)
         {
