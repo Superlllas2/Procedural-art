@@ -311,7 +311,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         float maxY = float.MinValue;
         foreach (Renderer renderer in renderers)
         {
-            float localMaxY = rootParent.InverseTransformPoint(renderer.bounds.max).y;
+            Vector3 localCenter = rootParent.InverseTransformPoint(renderer.bounds.center);
+            float localMaxY = localCenter.y + renderer.bounds.extents.y;
             maxY = Mathf.Max(maxY, localMaxY);
         }
 
