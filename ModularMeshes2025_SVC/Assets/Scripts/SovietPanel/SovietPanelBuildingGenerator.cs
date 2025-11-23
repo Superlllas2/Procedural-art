@@ -186,14 +186,22 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
     void BuildLongFacade(Transform parent, bool isFront, float zPos, System.Random random)
     {
+        float totalColumns = TotalWidth();
+        float leftEdgeX = 0f;
+        float rightEdgeX = (totalColumns - 1f) * gridSize;
+
         float xOffset = 0f;
         foreach (SectionLayout layout in sectionLayouts)
         {
             for (int localX = 0; localX < layout.width; localX++)
             {
+                float columnIndex = xOffset + localX;
+                float t = columnIndex / (totalColumns - 1f);
+                float xPos = Mathf.Lerp(leftEdgeX, rightEdgeX, t);
+
                 CellType groundCellType = DetermineCellType(layout, localX, 0);
                 Quaternion foundationRot = GetLongFacadeRotation(isFront);
-                bool placedFoundation = TryPlaceFoundation(parent, groundCellType, new Vector3((xOffset + localX) * gridSize, 0f, zPos), foundationRot, random);
+                bool placedFoundation = TryPlaceFoundation(parent, groundCellType, new Vector3(xPos, 0f, zPos), foundationRot, random);
 
                 for (int floorIndex = 0; floorIndex < floors; floorIndex++)
                 {
@@ -202,7 +210,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     if (prefab == null)
                         continue;
 
-                    Vector3 bottom = GetCellBottomPosition(prefab, cellType, floorIndex, placedFoundation, new Vector3((xOffset + localX) * gridSize, 0f, zPos));
+                    Vector3 bottom = GetCellBottomPosition(prefab, cellType, floorIndex, placedFoundation, new Vector3(xPos, 0f, zPos));
 
                     Quaternion rot = GetLongFacadeRotation(isFront);
                     InstantiateAligned(prefab, bottom, ApplyRotation(rot), parent);
