@@ -47,8 +47,8 @@ MonoBehaviour:
   floors: 5
   sectionCount: 3
   sectionWidths: 050000000300000005000000
-  gridSize: 1.98
-  floorHeight: 1.98
+  gridSize: 1.95
+  floorHeight: 1.95
   scale: 1
   useSeed: 0
   seed: 12345
@@ -64,7 +64,7 @@ MonoBehaviour:
     - {fileID: 4523898015460440981, guid: 8d9e0c277666d483da4540d195d661d1, type: 3}
   windowPrefabs:
     prefabs:
-    - {fileID: 634858440471927959, guid: 625ee65a472604dba9d198ea210004f3, type: 3}
+    - {fileID: 8317961911771583035, guid: af8228561254447699e5bb768c33c76b, type: 3}
     - {fileID: 8317961911771583035, guid: af8228561254447699e5bb768c33c76b, type: 3}
     - {fileID: 6690787639481816808, guid: 488e3dd927e304b43bda8107bbdfb05e, type: 3}
     - {fileID: 7795361763072629622, guid: a90af3450ef0b49678742ad48d6f7928, type: 3}
