@@ -123,8 +123,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         float zFront = -gridSize * 0.5f;
         float zBack = (shortFacadeDepth - 0.5f) * gridSize;
-        float xLeft = -gridSize * 0.5f;
-        float xRight = (TotalWidth() - 0.5f) * gridSize;
+        float xLeft = 0f;
+        float xRight = (TotalWidth() - 1f) * gridSize;
         float roofY = floors * floorHeight;
 
         Transform parent = CreateRootParent();
