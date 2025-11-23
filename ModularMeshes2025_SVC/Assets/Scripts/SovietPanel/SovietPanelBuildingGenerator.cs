@@ -93,6 +93,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     readonly Dictionary<GameObject, float> heightCache = new Dictionary<GameObject, float>();
 #if UNITY_EDITOR
     int floorIndexDebugSample = -1;
+    bool longEdgeDebugPrinted = false;
 #endif
 
     class SectionLayout
@@ -135,6 +136,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
 #if UNITY_EDITOR
         floorIndexDebugSample = -1;
+        longEdgeDebugPrinted = false;
 #endif
 
         BuildLongFacade(facadeParent, true, zFront, random);
@@ -193,17 +195,22 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
     void BuildLongFacade(Transform parent, bool isFront, float zPos, System.Random random)
     {
-        float leftShortFacadeX = gridSize * 0.5f;
-        float xOffset = 0f;
+        float totalWidth = TotalWidth();
+        int totalColumns = Mathf.Max(1, Mathf.RoundToInt(totalWidth));
+        float leftEdgeX = gridSize * 0.5f;
+        float rightEdgeX = (totalWidth - 0.5f) * gridSize;
+        int globalColumn = 0;
         foreach (SectionLayout layout in sectionLayouts)
         {
             for (int localX = 0; localX < layout.width; localX++)
             {
                 CellType groundCellType = DetermineCellType(layout, localX, 0);
                 Quaternion foundationRot = GetLongFacadeRotation(isFront);
-                // Align long façade columns so their centers coincide with the short façade edge planes,
-                // keeping both façades on the same rectangular footprint without corner steps.
-                Vector3 basePosition = new Vector3((leftShortFacadeX + (xOffset + localX) * gridSize), 0f, zPos);
+                // Interpolate column centers directly between the two short-façade planes so the first and last
+                // long-wall columns sit on the exact same X as the left/right short façades (pivot stays centered).
+                float t = totalColumns <= 1 ? 0f : globalColumn / (float)(totalColumns - 1);
+                float xPos = Mathf.Lerp(leftEdgeX, rightEdgeX, t);
+                Vector3 basePosition = new Vector3(xPos, 0f, zPos);
                 bool placedFoundation = TryPlaceFoundation(parent, groundCellType, basePosition, foundationRot, random);
 
                 for (int floorIndex = 0; floorIndex < floors; floorIndex++)
@@ -218,9 +225,21 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     Quaternion rot = GetLongFacadeRotation(isFront);
                     InstantiateAligned(prefab, bottom, ApplyRotation(rot), parent);
                 }
-            }
 
-            xOffset += layout.width;
+#if UNITY_EDITOR
+                if (!longEdgeDebugPrinted && (globalColumn == 0 || globalColumn == totalColumns - 1))
+                {
+                    Debug.DrawLine(basePosition, basePosition + Vector3.up * floorHeight, Color.cyan, 5f);
+                    if (globalColumn == totalColumns - 1)
+                    {
+                        Debug.Log($"Long facade edges -> left:{leftEdgeX:F3} right:{rightEdgeX:F3} first:{leftEdgeX:F3} last:{xPos:F3}");
+                        longEdgeDebugPrinted = true;
+                    }
+                }
+#endif
+
+                globalColumn++;
+            }
         }
     }
 
@@ -280,7 +299,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         Transform roofParent = CreateChild(parent, "Roof");
         float totalWidth = TotalWidth();
-        // Align roof pieces directly over the wall planes so parapets sit flush at corners.
+        int totalColumns = Mathf.Max(1, Mathf.RoundToInt(totalWidth));
+        // Align roof pieces directly over the wall planes so parapets sit flush at corners and match long/short edges.
         float shortLeftX = gridSize * 0.5f;
         float shortRightX = (totalWidth - 0.5f) * gridSize;
 
@@ -290,10 +310,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             float zPos = isFront ? zFront : zBack;
             Quaternion inwardRotation = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
 
-            for (int xIndex = 0; xIndex < totalWidth; xIndex++)
+            for (int xIndex = 0; xIndex < totalColumns; xIndex++)
             {
                 GameObject prefabToUse;
-                if (xIndex == 0 || xIndex == totalWidth - 1)
+                if (xIndex == 0 || xIndex == totalColumns - 1)
                     prefabToUse = roofPrefabs.rampInward;
                 else
                     prefabToUse = roofPrefabs.flat;
@@ -301,7 +321,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 if (prefabToUse == null)
                     continue;
 
-                Vector3 bottom = new Vector3(shortLeftX + xIndex * gridSize, roofY, zPos);
+                float t = totalColumns <= 1 ? 0f : xIndex / (float)(totalColumns - 1);
+                Vector3 bottom = new Vector3(Mathf.Lerp(shortLeftX, shortRightX, t), roofY, zPos);
                 InstantiateAligned(prefabToUse, bottom, ApplyRotation(inwardRotation), roofParent);
             }
         }
