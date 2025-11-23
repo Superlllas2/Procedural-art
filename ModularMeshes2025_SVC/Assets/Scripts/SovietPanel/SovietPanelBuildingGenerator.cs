@@ -90,6 +90,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
     readonly List<SectionLayout> sectionLayouts = new List<SectionLayout>();
     readonly Dictionary<GameObject, float> bottomOffsetCache = new Dictionary<GameObject, float>();
+    readonly Dictionary<GameObject, float> heightCache = new Dictionary<GameObject, float>();
 
     class SectionLayout
     {
@@ -201,10 +202,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                     if (prefab == null)
                         continue;
 
-                    if (floorIndex == 0 && placedFoundation && cellType != CellType.Entrance)
-                        continue;
-
-                    Vector3 bottom = new Vector3((xOffset + localX) * gridSize, floorIndex * floorHeight, zPos);
+                    Vector3 bottom = GetCellBottomPosition(prefab, cellType, floorIndex, placedFoundation, new Vector3((xOffset + localX) * gridSize, 0f, zPos));
 
                     Quaternion rot = GetLongFacadeRotation(isFront);
                     InstantiateAligned(prefab, bottom, ApplyRotation(rot), parent);
@@ -242,11 +240,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 {
                     CellType groundCellType = cellType;
                     placedFoundation = TryPlaceFoundation(parent, groundCellType, new Vector3(xPos, 0f, zPos), rotation, random);
-                    if (placedFoundation)
-                        continue;
                 }
 
-                Vector3 bottom = new Vector3(xPos, floorIndex * floorHeight, zPos);
+                Vector3 bottom = GetCellBottomPosition(prefab, cellType, floorIndex, placedFoundation, new Vector3(xPos, 0f, zPos));
                 InstantiateAligned(prefab, bottom, ApplyRotation(rotation), parent);
             }
         }
@@ -399,6 +395,55 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         float offset = bounds.size == Vector3.zero ? 0f : -bounds.min.y;
         bottomOffsetCache[prefab] = offset;
         return offset;
+    }
+
+    Vector3 GetCellBottomPosition(GameObject prefab, CellType cellType, int floorIndex, bool hasFoundation, Vector3 basePosition)
+    {
+        float foundationHeight = GetFoundationHeight();
+        float y = foundationHeight + floorIndex * floorHeight;
+
+        if (floorIndex == 0)
+        {
+            if (!hasFoundation)
+                y -= foundationHeight;
+
+            if (cellType == CellType.Entrance)
+            {
+                float entranceHeight = GetPrefabHeight(prefab);
+                float alignedTop = foundationHeight + floorHeight;
+                y = alignedTop - entranceHeight;
+
+                if (!hasFoundation)
+                    y -= foundationHeight;
+            }
+        }
+
+        return new Vector3(basePosition.x, y, basePosition.z);
+    }
+
+    float GetFoundationHeight()
+    {
+        return GetFamilyHeight(foundationPrefabs);
+    }
+
+    float GetFamilyHeight(PrefabFamily family)
+    {
+        GameObject prefab = family?.FirstOrDefault();
+        return GetPrefabHeight(prefab);
+    }
+
+    float GetPrefabHeight(GameObject prefab)
+    {
+        if (prefab == null)
+            return 0f;
+
+        if (heightCache.TryGetValue(prefab, out float cached))
+            return cached;
+
+        Bounds bounds = CalculateBounds(prefab);
+        float height = bounds.size.y;
+        heightCache[prefab] = height;
+        return height;
     }
 
     Bounds CalculateBounds(GameObject prefab)
