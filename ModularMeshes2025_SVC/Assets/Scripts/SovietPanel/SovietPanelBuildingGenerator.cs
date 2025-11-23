@@ -193,6 +193,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
     void BuildLongFacade(Transform parent, bool isFront, float zPos, System.Random random)
     {
+        float leftShortFacadeX = gridSize * 0.5f;
         float xOffset = 0f;
         foreach (SectionLayout layout in sectionLayouts)
         {
@@ -200,7 +201,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             {
                 CellType groundCellType = DetermineCellType(layout, localX, 0);
                 Quaternion foundationRot = GetLongFacadeRotation(isFront);
-                Vector3 basePosition = new Vector3((xOffset + localX + 0.5f) * gridSize, 0f, zPos);
+                // Align long façade columns so their centers coincide with the short façade edge planes,
+                // keeping both façades on the same rectangular footprint without corner steps.
+                Vector3 basePosition = new Vector3((leftShortFacadeX + (xOffset + localX) * gridSize), 0f, zPos);
                 bool placedFoundation = TryPlaceFoundation(parent, groundCellType, basePosition, foundationRot, random);
 
                 for (int floorIndex = 0; floorIndex < floors; floorIndex++)
@@ -229,11 +232,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     void BuildShortFacade(Transform parent, bool isLeft, float zFront, float zBack, System.Random random)
     {
         float totalWidth = TotalWidth();
-        // With centered pivots, the long façades span X = 0 to X = totalWidth * gridSize.
-        // Placing the short façade columns exactly on those edge planes keeps the corner column
-        // shared instead of offset, eliminating the overhang/step.
-        float leftEdgeX = 0f;
-        float rightEdgeX = totalWidth * gridSize;
+        // With centered pivots, the short façades sit half a grid out from the first/last long column centers.
+        // Anchoring them at ±0.5 * gridSize keeps the shared corner column aligned without overhang or inset.
+        float leftEdgeX = gridSize * 0.5f;
+        float rightEdgeX = (totalWidth - 0.5f) * gridSize;
         float xPos = isLeft ? leftEdgeX : rightEdgeX;
         Quaternion rotation = isLeft ? Quaternion.Euler(0f, -90f, 0f) : Quaternion.Euler(0f, 90f, 0f);
 
@@ -278,9 +280,9 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         Transform roofParent = CreateChild(parent, "Roof");
         float totalWidth = TotalWidth();
-        // Align short-side roof pieces directly over the wall planes so parapets sit flush at corners.
-        float shortLeftX = 0f;
-        float shortRightX = totalWidth * gridSize;
+        // Align roof pieces directly over the wall planes so parapets sit flush at corners.
+        float shortLeftX = gridSize * 0.5f;
+        float shortRightX = (totalWidth - 0.5f) * gridSize;
 
         for (int facade = 0; facade < 2; facade++)
         {
@@ -299,7 +301,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 if (prefabToUse == null)
                     continue;
 
-                Vector3 bottom = new Vector3((xIndex + 0.5f) * gridSize, roofY, zPos);
+                Vector3 bottom = new Vector3(shortLeftX + xIndex * gridSize, roofY, zPos);
                 InstantiateAligned(prefabToUse, bottom, ApplyRotation(inwardRotation), roofParent);
             }
         }
