@@ -221,7 +221,10 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
     void BuildShortFacade(Transform parent, bool isLeft, float zFront, float zBack, System.Random random)
     {
         float totalWidth = TotalWidth();
-        float xPos = isLeft ? 0f : (totalWidth - 1) * gridSize;
+        // Panels are authored with their pivot in the center, so we offset the short façades
+        // inward by half a grid cell to keep the walls flush with the long sides instead of
+        // hanging past the building footprint.
+        float xPos = isLeft ? gridSize * 0.5f : (totalWidth - 0.5f) * gridSize;
         Quaternion rotation = isLeft ? Quaternion.Euler(0f, -90f, 0f) : Quaternion.Euler(0f, 90f, 0f);
 
         for (int floorIndex = 0; floorIndex < floors; floorIndex++)
@@ -255,7 +258,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         Transform roofParent = CreateChild(parent, "Roof");
         float totalWidth = TotalWidth();
-        float maxX = (totalWidth - 1) * gridSize;
+        float shortLeftX = gridSize * 0.5f;
+        float shortRightX = (totalWidth - 0.5f) * gridSize;
 
         for (int facade = 0; facade < 2; facade++)
         {
@@ -286,8 +290,8 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
             for (int depthIndex = 0; depthIndex < shortFacadeDepth; depthIndex++)
             {
                 float zPos = Mathf.Lerp(zFront, zBack, depthIndex / (float)(shortFacadeDepth - 1));
-                Vector3 leftPos = new Vector3(0f, roofY, zPos);
-                Vector3 rightPos = new Vector3(maxX, roofY, zPos);
+                Vector3 leftPos = new Vector3(shortLeftX, roofY, zPos);
+                Vector3 rightPos = new Vector3(shortRightX, roofY, zPos);
 
                 InstantiateAligned(roofPrefabs.parapet, leftPos, ApplyRotation(leftRot), roofParent);
                 InstantiateAligned(roofPrefabs.parapet, rightPos, ApplyRotation(rightRot), roofParent);
