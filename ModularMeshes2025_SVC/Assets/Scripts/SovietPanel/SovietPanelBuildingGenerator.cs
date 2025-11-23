@@ -127,8 +127,6 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         float zBackShort = (shortFacadeDepth - 1f) * gridSize;
         float xLeft = -gridSize * 0.5f;
         float xRight = (TotalWidth() - 0.5f) * gridSize;
-        float roofY = GetFoundationHeight() + floors * floorHeight;
-
         Transform parent = CreateRootParent();
         Transform facadeParent = CreateChild(parent, "Facades");
 
@@ -139,6 +137,7 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
         BuildShortFacade(facadeParent, true, xLeft, zFrontShort, zBackShort, random);
         BuildShortFacade(facadeParent, false, xRight, zFrontShort, zBackShort, random);
 
+        float roofY = CalculateRoofBaseHeight(parent, facadeParent);
         BuildRoof(parent, xLeft, xRight, zFrontLong, zBackLong, zFrontShort, zBackShort, roofY, random);
     }
 
@@ -296,6 +295,27 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
                 InstantiateAligned(roofPrefabs.parapet, rightPos, ApplyRotation(rightRot), roofParent);
             }
         }
+    }
+
+    float CalculateRoofBaseHeight(Transform rootParent, Transform facadeParent)
+    {
+        float defaultRoofY = GetFoundationHeight() + floors * floorHeight;
+
+        if (rootParent == null || facadeParent == null)
+            return defaultRoofY;
+
+        Renderer[] renderers = facadeParent.GetComponentsInChildren<Renderer>();
+        if (renderers == null || renderers.Length == 0)
+            return defaultRoofY;
+
+        float maxY = float.MinValue;
+        foreach (Renderer renderer in renderers)
+        {
+            float localMaxY = rootParent.InverseTransformPoint(renderer.bounds.max).y;
+            maxY = Mathf.Max(maxY, localMaxY);
+        }
+
+        return Mathf.Max(defaultRoofY, maxY);
     }
 
     CellType DetermineCellType(SectionLayout layout, int localX, int floorIndex)
