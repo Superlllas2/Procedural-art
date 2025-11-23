@@ -257,29 +257,29 @@ public class SovietPanelBuildingGenerator : MonoBehaviour
 
         Transform roofParent = CreateChild(parent, "Roof");
 
-        for (int facade = 0; facade < 2; facade++)
+        float xCursor = 0f;
+        foreach (SectionLayout layout in sectionLayouts)
         {
-            bool isFront = facade == 0;
-            float zPos = isFront ? zFrontLong : zBackLong;
-            Quaternion inwardRotation = isFront ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
-
-            float xCursor = 0f;
-            foreach (SectionLayout layout in sectionLayouts)
+            for (int localX = 0; localX < layout.width; localX++)
             {
-                for (int localX = 0; localX < layout.width; localX++)
+                for (int depthIndex = 0; depthIndex <= shortFacadeDepth; depthIndex++)
                 {
-                    bool useRamp = localX == 0 || localX == layout.width - 1;
-                    GameObject prefabToUse = useRamp ? roofPrefabs.rampInward : roofPrefabs.flat;
+                    bool isFrontRow = depthIndex == 0;
+                    bool isBackRow = depthIndex == shortFacadeDepth;
+                    GameObject prefabToUse = (isFrontRow || isBackRow) ? roofPrefabs.rampInward : roofPrefabs.flat;
 
                     if (prefabToUse == null)
                         continue;
 
-                    Vector3 bottom = new Vector3((xCursor + localX) * gridSize, roofY, zPos);
-                    InstantiateAligned(prefabToUse, bottom, ApplyRotation(inwardRotation), roofParent);
-                }
+                    float zPos = zFrontLong + depthIndex * gridSize;
+                    Quaternion rotation = isFrontRow ? Quaternion.identity : isBackRow ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
 
-                xCursor += layout.width;
+                    Vector3 bottom = new Vector3((xCursor + localX) * gridSize, roofY, zPos);
+                    InstantiateAligned(prefabToUse, bottom, ApplyRotation(rotation), roofParent);
+                }
             }
+
+            xCursor += layout.width;
         }
 
         if (roofPrefabs.parapet != null)
